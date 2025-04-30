@@ -1,7 +1,8 @@
 import axios from 'axios';
 
 const api = axios.create({
-    baseURL: `http://localhost:5000/api`, // Dynamically set base URL
+    // baseURL: `http://localhost:5000/api`, // Dynamically set base URL
+    baseURL: `http://aetheron-worker.jassalarjansingh.workers.dev`, // Dynamically set base URL
     headers: {
         'Content-Type': 'application/json'
     }

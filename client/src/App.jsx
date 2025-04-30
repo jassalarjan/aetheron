@@ -15,10 +15,9 @@ import LoginSignup from "./LoginSignup";
 import Profile from "./Profile";
 import Sidebar from './components/Sidebar';
 import ImageGenerator from "./ImageGenerator";
-import TogetherAIChat from './TogetherAIChat';
 import HomePage from "./HomePage"; // Import HomePage component
 import Agent from "./Agent"; // Import Agent component
-import Aetheron from "./Aetheron"; // Import Aetheron component
+import Logout from "./Logout"; // Import Logout component
 import Documentation from "./Documentation"; // Import Documentation component
 // Import ProtectedRoute from the root src folder
 import ProtectedRoute from "./ProtectedRoute";
@@ -58,7 +57,7 @@ function App() {
 					<Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
 					<Route path="/image-generator" element={<ProtectedRoute><ImageGenerator /></ProtectedRoute>} />
 					<Route path="/nlp" element={<ProtectedRoute><VoiceRecognition /></ProtectedRoute>} />
-					<Route path="/aetheron" element={<Aetheron />} />
+					<Route path="/logout" element={<Logout />} />
 					<Route path="/documentation" element={<Documentation />} />
 
 
@@ -67,8 +66,8 @@ function App() {
 					<Route path="/agent" element={<ProtectedRoute><Agent /></ProtectedRoute>} />
 
 					{/* Default routes */}
-					<Route path="/" element={<Navigate to={isAuthenticated ? "/home" : "/aetheron"} replace />} />
-					<Route path="*" element={<Navigate to={isAuthenticated ? "/home" : "/aetheron"} replace />} />
+					<Route path="/" element={<Navigate to={isAuthenticated ? "/home" : "/login"} replace />} />
+					<Route path="*" element={<Navigate to={isAuthenticated ? "/home" : "/login"} replace />} />
 				</Routes>
 			</div>
 		</Router>
