@@ -372,3 +372,129 @@ input {
 		left: 50%;
 	}
 }
+
+.login-container {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	min-height: 100vh;
+	background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+	padding: 20px;
+}
+
+.login-box {
+	display: flex;
+	background: white;
+	border-radius: 20px;
+	box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+	overflow: hidden;
+	width: 100%;
+	max-width: 900px;
+	min-height: 500px;
+}
+
+.login-image {
+	flex: 1;
+	background: #f8f9fa;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 40px;
+}
+
+.login-image img {
+	max-width: 100%;
+	height: auto;
+}
+
+.login-form {
+	flex: 1;
+	padding: 40px;
+	display: flex;
+	flex-direction: column;
+}
+
+.login-form h2 {
+	margin-bottom: 30px;
+	color: #333;
+	font-size: 28px;
+	text-align: center;
+}
+
+.form-group {
+	margin-bottom: 20px;
+}
+
+.form-group input {
+	width: 100%;
+	padding: 12px 15px;
+	border: 1px solid #ddd;
+	border-radius: 8px;
+	font-size: 16px;
+	transition: border-color 0.3s ease;
+}
+
+.form-group input:focus {
+	border-color: #667eea;
+	outline: none;
+	box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+}
+
+.login-button {
+	background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+	color: white;
+	padding: 12px;
+	border: none;
+	border-radius: 8px;
+	font-size: 16px;
+	cursor: pointer;
+	transition: transform 0.3s ease;
+	margin-top: 10px;
+}
+
+.login-button:hover {
+	transform: translateY(-2px);
+}
+
+.toggle-form {
+	margin-top: 20px;
+	text-align: center;
+	color: #666;
+}
+
+.toggle-button {
+	background: none;
+	border: none;
+	color: #667eea;
+	cursor: pointer;
+	font-size: 16px;
+	padding: 0;
+	margin-left: 5px;
+}
+
+.toggle-button:hover {
+	text-decoration: underline;
+}
+
+.error-message {
+	background-color: #fee2e2;
+	color: #dc2626;
+	padding: 10px;
+	border-radius: 8px;
+	margin-bottom: 20px;
+	text-align: center;
+}
+
+@media (max-width: 768px) {
+	.login-box {
+		flex-direction: column;
+	}
+
+	.login-image {
+		display: none;
+	}
+
+	.login-form {
+		padding: 30px;
+	}
+}
