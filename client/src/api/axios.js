@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-    baseURL: `https://aetheron-worker.jassalarjansingh.workers.dev/api`, // Using HTTPS and adding /api prefix
+    baseURL: 'https://aetheron-worker.jassalarjansingh.workers.dev', // Remove /api from baseURL
     headers: {
         'Content-Type': 'application/json'
     }
