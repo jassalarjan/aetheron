@@ -6,6 +6,7 @@ import {
 	Plus,
 	LogOut,
 	Settings,
+	Loader2,
 } from "lucide-react";
 import ExpertiseModal from "./ExpertiseModal";
 import MessageFormatter from "./MessageFormatter";
@@ -20,6 +21,8 @@ const TogetherAIChat = ({ setView }) => {
 	const [chatHistory, setChatHistory] = useState([]);
 	const [dropdownOpen, setDropdownOpen] = useState(false);
 	const [showModal, setShowModal] = useState(false);
+	const [isLoading, setIsLoading] = useState(false);
+	const [error, setError] = useState(null);
 	const chatBoxRef = useRef(null);
 
 	useEffect(() => {
@@ -76,14 +79,21 @@ const TogetherAIChat = ({ setView }) => {
 	}, [messages]);
 
 	const handleSendMessage = async () => {
-		if (!prompt.trim()) return;
+		if (!prompt.trim() || isLoading) return;
 
 		try {
+			setIsLoading(true);
+			setError(null);
 			const userPreferences = localStorage.getItem("userPreferences") || "";
 			const expertiseDomain = localStorage.getItem("expertiseDomain") || "";
 
-			// Add user message to UI immediately
-			const userMessage = { sender: "user", text: prompt };
+			// Add user message to UI immediately with timestamp
+			const userMessage = { 
+				sender: "user", 
+				text: prompt,
+				timestamp: new Date().toISOString(),
+				status: 'sending'
+			};
 			setMessages((prev) => [...prev, userMessage]);
 			setPrompt(""); // Clear input immediately for better UX
 
@@ -96,10 +106,19 @@ const TogetherAIChat = ({ setView }) => {
 				expertiseDomains: expertiseDomain,
 			});
 
-			// Add bot response to UI
+			// Update user message status to sent
+			setMessages((prev) => 
+				prev.map(msg => 
+					msg === userMessage ? { ...msg, status: 'sent' } : msg
+				)
+			);
+
+			// Add bot response to UI with timestamp
 			const botMessage = {
 				sender: "ai",
 				text: data.response,
+				timestamp: new Date().toISOString(),
+				status: 'received'
 			};
 			setMessages((prev) => [...prev, botMessage]);
 
@@ -122,12 +141,24 @@ const TogetherAIChat = ({ setView }) => {
 				errorMessage = "You are offline. Please check your internet connection.";
 			}
 
+			// Update user message status to failed
+			setMessages((prev) => 
+				prev.map(msg => 
+					msg.status === 'sending' ? { ...msg, status: 'failed' } : msg
+				)
+			);
+
 			// Add error message to UI
 			const errorBotMessage = {
 				sender: "ai",
 				text: `Error: ${errorMessage}`,
+				timestamp: new Date().toISOString(),
+				status: 'error'
 			};
 			setMessages((prev) => [...prev, errorBotMessage]);
+			setError(errorMessage);
+		} finally {
+			setIsLoading(false);
 		}
 	};
 
@@ -205,6 +236,8 @@ const TogetherAIChat = ({ setView }) => {
 						<button
 							onClick={() => setDropdownOpen(!dropdownOpen)}
 							className="flex items-center space-x-3 w-full p-3 rounded-lg hover:bg-indigo-100 transition-colors duration-200"
+							aria-expanded={dropdownOpen}
+							aria-label="User menu"
 						>
 							<div className="w-10 h-10 bg-indigo-500/20 rounded-full flex items-center justify-center">
 								<User className="w-6 h-6 text-indigo-500" />
@@ -218,13 +251,14 @@ const TogetherAIChat = ({ setView }) => {
 						</button>
 
 						{dropdownOpen && (
-							<div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-lg shadow-lg border border-gray-200 py-2">
+							<div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-10">
 								<button
 									onClick={() => {
 										setShowModal(true);
 										setDropdownOpen(false);
 									}}
 									className="flex items-center space-x-3 w-full px-4 py-2 text-left text-gray-700 hover:bg-indigo-100"
+									aria-label="Edit system prompt"
 								>
 									<Settings className="w-4 h-4 text-gray-600" />
 									<span>Edit System Prompt</span>
@@ -232,6 +266,7 @@ const TogetherAIChat = ({ setView }) => {
 								<button
 									onClick={handleLogout}
 									className="flex items-center space-x-3 w-full px-4 py-2 text-left text-red-500 hover:bg-indigo-100"
+									aria-label="Logout"
 								>
 									<LogOut className="w-4 h-4 text-red-500" />
 									<span>Logout</span>
@@ -248,9 +283,16 @@ const TogetherAIChat = ({ setView }) => {
 							key={chat.chat_id}
 							className="cursor-pointer hover:bg-indigo-50 py-3 px-4 border-b border-gray-200 transition-colors"
 							onClick={() => handleChatSelect(chat)}
+							role="button"
+							tabIndex={0}
+							onKeyDown={(e) => {
+								if (e.key === 'Enter' || e.key === ' ') {
+									handleChatSelect(chat);
+								}
+							}}
 						>
 							<span className="font-medium text-gray-800">
-							{chat.chat_name ? chat.chat_name : `Chat ${chat.chat_id}`}
+								{chat.chat_name ? chat.chat_name : `Chat ${chat.chat_id}`}
 							</span>
 						</div>
 					))}
@@ -261,6 +303,7 @@ const TogetherAIChat = ({ setView }) => {
 					<button
 						onClick={handleNewChat}
 						className="flex items-center space-x-2 p-3 w-full rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition-colors"
+						aria-label="Create new chat"
 					>
 						<Plus className="w-5 h-5" />
 						<span>Create New Chat</span>
@@ -271,7 +314,7 @@ const TogetherAIChat = ({ setView }) => {
 			{/* Main Chat Section */}
 			<div className="flex-1 flex flex-col">
 				<div
-					className="flex-1 overflow-y-auto  p-4 space-y-4 bg-gray-50"
+					className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50"
 					ref={chatBoxRef}
 				>
 					{messages.length ? (
@@ -283,17 +326,32 @@ const TogetherAIChat = ({ setView }) => {
 									}`}
 								>
 									<div
-										className={`rounded-xl px-4 py-1  text-md whitespace-pre-wrap font-sans ${
+										className={`rounded-xl px-4 py-2 text-md whitespace-pre-wrap font-sans relative group ${
 											message.sender === "ai"
-												? "bg-transparent text-gray-900"
-												: "bg-white shadow-sm text-gray-800"
+												? "bg-white shadow-sm text-gray-900"
+												: "bg-indigo-50 shadow-sm text-gray-800"
 										}`}
 										style={{ lineHeight: "1.6" }}
 									>
-<MessageFormatter
-  message={message.text}
-  isLatest={index === messages.length - 1 && message.sender === "ai"}
-/>
+										<MessageFormatter
+											message={message.text}
+											isLatest={index === messages.length - 1 && message.sender === "ai"}
+										/>
+										
+										{/* Message Status and Timestamp */}
+										<div className="flex items-center justify-end mt-1 text-xs text-gray-500">
+											{message.timestamp && (
+												<span className="mr-2">
+													{new Date(message.timestamp).toLocaleTimeString()}
+												</span>
+											)}
+											{message.status === 'sending' && (
+												<Loader2 className="w-3 h-3 animate-spin" />
+											)}
+											{message.status === 'failed' && (
+												<span className="text-red-500">Failed to send</span>
+											)}
+										</div>
 									</div>
 								</div>
 							</div>
@@ -305,21 +363,40 @@ const TogetherAIChat = ({ setView }) => {
 					)}
 				</div>
 
+				{/* Error Message */}
+				{error && (
+					<div className="px-4 py-2 bg-red-50 text-red-600 text-sm">
+						{error}
+					</div>
+				)}
+
 				{/* Chat Input Section */}
-				<div className=" p-4">
+				<div className="p-4">
 					<div className="relative flex items-center space-x-2">
 						<textarea
-							className="w-full h-16 p-3 rounded-lg border border-gray-300 shadow-lg resize-none focus:ring-2 focus:ring-indigo-500"
+							className="w-full h-16 p-3 rounded-lg border border-gray-300 shadow-lg resize-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50"
 							value={prompt}
 							onChange={(e) => setPrompt(e.target.value)}
 							onKeyDown={handleKeyDown}
 							placeholder="Type your message..."
+							disabled={isLoading}
+							aria-label="Message input"
 						/>
 						<button
 							onClick={handleSendMessage}
-							className="absolute w-6 right-5 top-4 text-indigo-600 hover:text-indigo-700 transition-colors"
+							disabled={isLoading || !prompt.trim()}
+							className={`absolute w-6 right-5 top-4 transition-colors ${
+								isLoading || !prompt.trim()
+									? "text-gray-400 cursor-not-allowed"
+									: "text-indigo-600 hover:text-indigo-700"
+							}`}
+							aria-label="Send message"
 						>
-							<Send className="w-8 h-8" />
+							{isLoading ? (
+								<Loader2 className="w-8 h-8 animate-spin" />
+							) : (
+								<Send className="w-8 h-8" />
+							)}
 						</button>
 					</div>
 				</div>
