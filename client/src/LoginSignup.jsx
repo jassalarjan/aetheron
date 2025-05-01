@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import axios from "axios";
+import api from "./api/axios"; // Import the configured axios instance
 import { useNavigate } from "react-router-dom";
 import "./assets/css/login.css";
 import logImage from "./assets/images/log.png";
@@ -26,8 +26,8 @@ const LoginSignup = () => {
 		setError("");
 
 		try {
-			const endpoint = isLogin ? "/api/login" : "/api/register";
-			const response = await axios.post(endpoint, formData);
+			const endpoint = isLogin ? "/login" : "/register"; // Remove /api prefix since it's in baseURL
+			const response = await api.post(endpoint, formData);
 
 			if (isLogin) {
 				if (response.data.token) {
@@ -40,16 +40,13 @@ const LoginSignup = () => {
 						localStorage.setItem("username", response.data.user.username);
 					}
 					
-					// Set default axios headers for future requests
-					axios.defaults.headers.common['Authorization'] = `Bearer ${response.data.token}`;
-					
 					navigate("/home"); // Redirect to home page after successful login
 				}
 			} else {
 				// Handle registration success
 				if (response.data.message === "User registered successfully") {
 					setError(""); // Clear any errors
-					toggleForm(true); // Switch to login form
+					setIsLogin(true); // Switch to login form
 					// Optional: Show success message
 					alert("Registration successful! Please login.");
 				}
@@ -64,158 +61,64 @@ const LoginSignup = () => {
 	};
 
 	// Toggle between login and signup
-	const toggleForm = (isLoginMode) => {
-		setIsLogin(isLoginMode);
+	const toggleForm = () => {
+		setIsLogin(!isLogin);
 		setError("");
 		setFormData({ username: "", email: "", password: "" });
 	};
 
 	return (
-		<div className="form-block">
-			<div className={`container-form ${!isLogin ? "sign-up-mode" : ""}`}>
-				<div className="forms-container-form">
-					<div className="signin-signup">
-						{/* Sign In Form */}
-						<form onSubmit={handleSubmit} className="form sign-in-form">
-							<h2 className="title">Sign in</h2>
-							{error && (
-								<div
-									className="alert alert-danger"
-									role="alert"
-									aria-live="polite"
-								>
-									{error}
-								</div>
-							)}
-							<div className="input-field">
-								<i className="fas fa-user"></i>
-								<input
-									type="text"
-									name="username"
-									placeholder="Username"
-									value={formData.username}
-									onChange={handleChange}
-									required
-								/>
-							</div>
-							<div className="input-field">
-								<i className="fas fa-lock"></i>
-								<input
-									type="password"
-									name="password"
-									placeholder="Password"
-									value={formData.password}
-									onChange={handleChange}
-									required
-								/>
-							</div>
-							<input type="submit" value="Login" className="btn solid" />
-							<p className="social-text">
-								Don't have an account?{" "}
-								<button
-									type="button"
-									className="btn transparent"
-									onClick={() => toggleForm(false)}
-								>
-									Sign up
-								</button>
-							</p>
-						</form>
-
-						{/* Sign Up Form */}
-						<form onSubmit={handleSubmit} className="form  sign-up-form">
-							<h2 className="title">Sign up</h2>
-							{error && (
-								<div
-									className="alert alert-danger"
-									role="alert"
-									aria-live="polite"
-								>
-									{error}
-								</div>
-							)}
-							<div className="input-field">
-								<i className="fas fa-user"></i>
-								<input
-									type="text"
-									name="username"
-									placeholder="Username"
-									value={formData.username}
-									onChange={handleChange}
-									required
-								/>
-							</div>
-							<div className="input-field">
-								<i className="fas fa-envelope"></i>
+		<div className="login-container">
+			<div className="login-box">
+				<div className="login-image">
+					<img src={isLogin ? logImage : registerImage} alt="Login" />
+				</div>
+				<div className="login-form">
+					<h2>{isLogin ? "Login" : "Sign Up"}</h2>
+					{error && <div className="error-message">{error}</div>}
+					<form onSubmit={handleSubmit}>
+						<div className="form-group">
+							<input
+								type="text"
+								name="username"
+								value={formData.username}
+								onChange={handleChange}
+								placeholder="Username"
+								required
+							/>
+						</div>
+						{!isLogin && (
+							<div className="form-group">
 								<input
 									type="email"
 									name="email"
-									placeholder="Email"
 									value={formData.email}
 									onChange={handleChange}
+									placeholder="Email"
 									required
 								/>
 							</div>
-							<div className="input-field">
-								<i className="fas fa-lock"></i>
-								<input
-									type="password"
-									name="password"
-									placeholder="Password"
-									value={formData.password}
-									onChange={handleChange}
-									required
-								/>
-							</div>
-							<input type="submit" value="Sign up" className="btn solid" />
-							<p className="social-text">
-								Already have an account?{" "}
-								<button
-									type="button"
-									className="btn transparent"
-									onClick={() => toggleForm(true)}
-								>
-									Sign in
-								</button>
-							</p>
-						</form>
-					</div>
-				</div>
-
-				{/* Panels */}
-				<div className="panels-container-form">
-					<div className="panel left-panel">
-						<div className="content">
-							<h3>New here?</h3>
-							<p>Join us to start your journey with our intelligent chatbot!</p>
-							<button
-								type="button"
-								className="btn transparent"
-								onClick={() => toggleForm(false)}
-							>
-								Sign up
-							</button>
+						)}
+						<div className="form-group">
+							<input
+								type="password"
+								name="password"
+								value={formData.password}
+								onChange={handleChange}
+								placeholder="Password"
+								required
+							/>
 						</div>
-						<img
-							src={registerImage}
-							className="image"
-							alt="Sign up illustration"
-						/>
-					</div>
-					<div className="panel right-panel">
-						<div className="content">
-							<h3>One of us?</h3>
-							<p>Welcome back! Sign in to continue your conversation.</p>
-							<button
-								type="button"
-								className="btn transparent"
-								onClick={() => toggleForm(true)}
-							>
-								Sign in
-							</button>
-						</div>
-						<img src={logImage} className="image" alt="Sign in illustration" />
-					</div>
+						<button type="submit" className="login-button">
+							{isLogin ? "Login" : "Sign Up"}
+						</button>
+					</form>
+					<p className="toggle-form">
+						{isLogin ? "Don't have an account? " : "Already have an account? "}
+						<button onClick={toggleForm} className="toggle-button">
+							{isLogin ? "Sign Up" : "Login"}
+						</button>
+					</p>
 				</div>
 			</div>
 		</div>
