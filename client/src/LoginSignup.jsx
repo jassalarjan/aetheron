@@ -26,7 +26,7 @@ const LoginSignup = () => {
 		setError("");
 
 		try {
-			const endpoint = isLogin ? "/api/login" : "/api/register"; // Add /api prefix
+			const endpoint = isLogin ? "/login" : "/register"; // Remove /api prefix since it's in baseURL
 			const response = await api.post(endpoint, formData);
 
 			if (isLogin) {

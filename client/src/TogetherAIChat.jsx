@@ -88,14 +88,14 @@ const TogetherAIChat = ({ setView }) => {
 			setPrompt(""); // Clear input immediately for better UX
 
 			// Send message to server using the configured axios instance
-			const { data } = await api.post("/chat", {
+			const { data } = await api.post("/chat/message", {
 				prompt,
 				chat_id: chatId,
 				sender: "user",
-				// userPreferences,
-				// expertiseDomains: expertiseDomain,
+				userPreferences,
+				expertiseDomains: expertiseDomain,
 			});
-			// console.log("Response from server:", data);
+
 			// Add bot response to UI
 			const botMessage = {
 				sender: "ai",
@@ -119,8 +119,7 @@ const TogetherAIChat = ({ setView }) => {
 			} else if (error.response?.data?.error) {
 				errorMessage = error.response.data.error;
 			} else if (!navigator.onLine) {
-				errorMessage =
-					"You are offline. Please check your internet connection.";
+				errorMessage = "You are offline. Please check your internet connection.";
 			}
 
 			// Add error message to UI

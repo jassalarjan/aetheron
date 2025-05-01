@@ -29,7 +29,7 @@ const ImageGenerator = () => {
 
 	const fetchOrCreateChat = async () => {
 		try {
-			const response = await axios.get("/chat/latest-chat");
+			const response = await axios.get("/chat/latest");
 			setChatId(response.data.chat_id || 1);
 		} catch (error) {
 			console.error("Error fetching chat:", error);
