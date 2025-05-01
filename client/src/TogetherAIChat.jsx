@@ -7,12 +7,11 @@ import {
 	LogOut,
 	Settings,
 	Loader2,
+	AlertCircle,
 } from "lucide-react";
 import ExpertiseModal from "./ExpertiseModal";
 import MessageFormatter from "./MessageFormatter";
 import api from "./api/axios";
-
-
 
 const TogetherAIChat = ({ setView }) => {
 	const [prompt, setPrompt] = useState("");
@@ -23,6 +22,7 @@ const TogetherAIChat = ({ setView }) => {
 	const [showModal, setShowModal] = useState(false);
 	const [isLoading, setIsLoading] = useState(false);
 	const [error, setError] = useState(null);
+	const [isInitialLoading, setIsInitialLoading] = useState(true);
 	const chatBoxRef = useRef(null);
 
 	useEffect(() => {
@@ -35,11 +35,11 @@ const TogetherAIChat = ({ setView }) => {
 
 	const fetchChatHistory = async () => {
 		try {
+			setError(null);
 			const response = await api.get("/chat/chat-history");
 			if (response.data.chats && response.data.chats.length > 0) {
 				setChatHistory(response.data.chats);
 			} else {
-				console.log(response.data.message || "No chat history found");
 				setChatHistory([]);
 			}
 		} catch (error) {
@@ -48,22 +48,57 @@ const TogetherAIChat = ({ setView }) => {
 				handleLogout();
 				return;
 			}
+			setError("Failed to load chat history. Please try again later.");
 			setChatHistory([]);
 		}
 	};
 
 	const fetchOrCreateChat = async () => {
 		try {
+			setError(null);
 			const response = await api.get("/chat/latest-chat");
 			if (response.data.chat_id) {
 				setChatId(response.data.chat_id);
+				// Fetch messages for this chat
+				await fetchChatMessages(response.data.chat_id);
 			} else {
-				console.log(response.data.message || "No chats available");
-				setChatId(1); // Default to chat ID 1 if no chats exist
+				// No existing chat, create a new one
+				setChatId(null);
+				setMessages([]);
 			}
 		} catch (error) {
 			console.error("Error fetching latest chat:", error);
-			setChatId(1); // Default to chat ID 1 on error
+			if (error.response?.status === 404) {
+				// No chat exists yet, this is fine
+				setChatId(null);
+				setMessages([]);
+			} else {
+				setError("Failed to load chat. Please try again later.");
+			}
+		} finally {
+			setIsInitialLoading(false);
+		}
+	};
+
+	const fetchChatMessages = async (chatId) => {
+		try {
+			setError(null);
+			const response = await api.get(`/chat/chats/${chatId}/messages`);
+			if (response.data && response.data.length > 0) {
+				const formattedMessages = response.data.map((msg) => ({
+					sender: msg.sender,
+					text: msg.message || msg.response,
+					timestamp: msg.timestamp || new Date().toISOString(),
+					status: 'sent'
+				}));
+				setMessages(formattedMessages);
+			} else {
+				setMessages([]);
+			}
+		} catch (error) {
+			console.error("Error fetching chat messages:", error);
+			setError("Failed to load messages. Please try again later.");
+			setMessages([]);
 		}
 	};
 
@@ -162,57 +197,29 @@ const TogetherAIChat = ({ setView }) => {
 		}
 	};
 
-	const checkNetworkConnectivity = () => {
-		if (!navigator.onLine) {
-			console.error("No internet connection");
-			return false;
-		}
-		return true;
-	};
-
 	const handleChatSelect = async (chat) => {
 		setChatId(chat.chat_id);
 		try {
-			const response = await api.get(`/chat/chats/${chat.chat_id}/messages`);
-			const messages = response.data;
-			const formattedMessages = messages.map((msg) => ({
-				sender: msg.sender,
-				text: msg.message || msg.response, // Use message for user, response for AI
-			}));
-			setMessages(formattedMessages);
+			setError(null);
+			await fetchChatMessages(chat.chat_id);
 		} catch (error) {
-			if (error.response?.status === 401 || error.response?.status === 403) {
-				window.location.href = "/login";
-				return;
-			}
-			console.error("Error fetching chat messages:", error);
-			setMessages([]);
+			console.error("Error selecting chat:", error);
+			setError("Failed to load chat messages. Please try again later.");
 		}
 	};
 
 	const handleNewChat = async () => {
 		try {
-			// Fetch the latest chat ID from the backend
-			const response = await api.get("/chat/latest-chat"); // Assuming this API provides the latest chat
-			let newChatId = 1; // Default to 1 if no chat ID is returned
-	
-			if (response.data.chat_id) {
-				// If a chat_id exists, increment it
-				newChatId = response.data.chat_id+1;
-			}
-	
-			// Clear current chat state and set the new chat ID
+			setError(null);
 			setMessages([]);
-			setChatId(newChatId); // Set the new chat ID
-			setPrompt(""); // Reset the input prompt
-	
-			// Refresh chat history to reflect new chat
+			setChatId(null);
+			setPrompt("");
 			await fetchChatHistory();
 		} catch (error) {
 			console.error("Error creating new chat:", error);
+			setError("Failed to create new chat. Please try again later.");
 		}
 	};
-	
 
 	const handleLogout = () => {
 		localStorage.removeItem("authToken");
@@ -225,6 +232,20 @@ const TogetherAIChat = ({ setView }) => {
 			handleSendMessage();
 		}
 	};
+
+	if (isInitialLoading) {
+		return (
+			<div className="flex h-screen items-center justify-center bg-gray-50">
+				<div className="flex flex-col items-center space-y-4">
+					<div className="relative">
+						<div className="w-16 h-16 border-4 border-indigo-200 rounded-full"></div>
+						<div className="w-16 h-16 border-4 border-indigo-600 rounded-full animate-spin absolute top-0 left-0 border-t-transparent"></div>
+					</div>
+					<p className="text-gray-600 font-medium">Loading chat...</p>
+				</div>
+			</div>
+		);
+	}
 
 	return (
 		<div className="flex h-screen bg-gray-50">
@@ -278,24 +299,30 @@ const TogetherAIChat = ({ setView }) => {
 
 				{/* Chat History Section */}
 				<div className="flex-1 overflow-y-auto">
-					{chatHistory.map((chat) => (
-						<div
-							key={chat.chat_id}
-							className="cursor-pointer hover:bg-indigo-50 py-3 px-4 border-b border-gray-200 transition-colors"
-							onClick={() => handleChatSelect(chat)}
-							role="button"
-							tabIndex={0}
-							onKeyDown={(e) => {
-								if (e.key === 'Enter' || e.key === ' ') {
-									handleChatSelect(chat);
-								}
-							}}
-						>
-							<span className="font-medium text-gray-800">
-								{chat.chat_name ? chat.chat_name : `Chat ${chat.chat_id}`}
-							</span>
+					{chatHistory.length > 0 ? (
+						chatHistory.map((chat) => (
+							<div
+								key={chat.chat_id}
+								className="cursor-pointer hover:bg-indigo-50 py-3 px-4 border-b border-gray-200 transition-colors"
+								onClick={() => handleChatSelect(chat)}
+								role="button"
+								tabIndex={0}
+								onKeyDown={(e) => {
+									if (e.key === 'Enter' || e.key === ' ') {
+										handleChatSelect(chat);
+									}
+								}}
+							>
+								<span className="font-medium text-gray-800">
+									{chat.chat_name ? chat.chat_name : `Chat ${chat.chat_id}`}
+								</span>
+							</div>
+						))
+					) : (
+						<div className="p-4 text-center text-gray-500">
+							No chat history yet
 						</div>
-					))}
+					)}
 				</div>
 
 				{/* New Chat Button */}
@@ -317,7 +344,14 @@ const TogetherAIChat = ({ setView }) => {
 					className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50"
 					ref={chatBoxRef}
 				>
-					{messages.length ? (
+					{error && (
+						<div className="flex items-center justify-center p-4 bg-red-50 text-red-600 rounded-lg">
+							<AlertCircle className="w-5 h-5 mr-2" />
+							<span>{error}</span>
+						</div>
+					)}
+
+					{messages.length > 0 ? (
 						messages.map((message, index) => (
 							<div key={index} className="w-full flex justify-center">
 								<div
@@ -357,18 +391,13 @@ const TogetherAIChat = ({ setView }) => {
 							</div>
 						))
 					) : (
-						<div className="text-center text-gray-400 py-5">
-							No messages yet
+						<div className="flex flex-col items-center justify-center h-full text-gray-400">
+							<MessageSquare className="w-12 h-12 mb-4" />
+							<p className="text-lg">No messages yet</p>
+							<p className="text-sm mt-2">Start a new conversation!</p>
 						</div>
 					)}
 				</div>
-
-				{/* Error Message */}
-				{error && (
-					<div className="px-4 py-2 bg-red-50 text-red-600 text-sm">
-						{error}
-					</div>
-				)}
 
 				{/* Chat Input Section */}
 				<div className="p-4">
