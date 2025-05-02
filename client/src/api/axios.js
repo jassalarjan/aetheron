@@ -1,9 +1,11 @@
 import axios from 'axios';
 
-console.log('Creating axios instance with baseURL:', 'https://aetheron-worker.jassalarjansingh.workers.dev/api');
+// Use a more flexible base URL without the /api suffix
+const baseURL = 'https://aetheron-worker.jassalarjansingh.workers.dev';
+console.log('Creating axios instance with baseURL:', baseURL);
 
 const api = axios.create({
-    baseURL: 'https://aetheron-worker.jassalarjansingh.workers.dev/api',
+    baseURL: baseURL,
     headers: {
         'Content-Type': 'application/json'
     },
@@ -13,6 +15,13 @@ const api = axios.create({
 // Add request interceptor to include auth token
 api.interceptors.request.use((config) => {
     console.log(`Making API request to: ${config.method?.toUpperCase() || 'GET'} ${config.url}`);
+    
+    // Add /api prefix if not already present and not requesting a root endpoint
+    if (config.url && !config.url.startsWith('/api') && !config.url.startsWith('/user') && config.url !== '/') {
+        config.url = `/api${config.url}`;
+        console.log(`Adjusted URL with /api prefix: ${config.url}`);
+    }
+    
     console.log('Request config:', { 
         baseURL: config.baseURL,
         url: config.url, 
@@ -24,11 +33,7 @@ api.interceptors.request.use((config) => {
     const token = localStorage.getItem('authToken');
     if (token) {
         config.headers.Authorization = `Bearer ${token}`;
-    }
-    
-    // Special handling for user profile endpoints
-    if (config.url && (config.url.includes('/user') || config.url.includes('/chat'))) {
-        console.log('User/chat endpoint detected, ensuring CORS headers are set');
+        console.log('Added authorization token to request');
     }
     
     return config;
@@ -58,10 +63,20 @@ api.interceptors.response.use(
             data: error.response?.data
         });
         
+        // For 404 errors on /api/ endpoints, try without the /api prefix
+        if (error.response?.status === 404 && error.config?.url?.startsWith('/api/')) {
+            console.log('Attempting retry without /api prefix');
+            const newUrl = error.config.url.replace('/api/', '/');
+            return api({
+                ...error.config,
+                url: newUrl
+            });
+        }
+        
         if (error.message === 'Network Error') {
             console.error('CORS or network issue detected');
-            // Display a user-friendly message
-            alert('Network connection issue. Please try again or contact support if the problem persists.');
+            // Display a user-friendly message in the console
+            console.error('Network connection issue detected');
         }
         
         if (error.response?.status === 401 || error.response?.status === 403) {
@@ -69,13 +84,8 @@ api.interceptors.response.use(
             // Clear invalid token
             localStorage.removeItem('authToken');
             localStorage.removeItem('userId');
-            localStorage.removeItem('username');
             // Redirect to login
             window.location.href = '/login';
-        }
-        
-        if (error.response?.status === 404) {
-            console.error('Resource not found:', error.config?.url);
         }
         
         return Promise.reject(error);

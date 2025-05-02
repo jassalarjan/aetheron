@@ -32,26 +32,64 @@ const Profile = () => {
         }
 
         console.log("Fetching user profile data...");
-        const response = await axios.get("/user", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        });
         
-        console.log("Fetched user data:", response.data);
-
-        if (response.data) {
-          setUser(response.data);
-          setFormData({
-            username: response.data.username || "",
-            email: response.data.email || "",
-            currentPassword: "",
-            newPassword: "",
-            confirmPassword: "",
+        // Try to get user data using the /user endpoint directly
+        try {
+          const response = await axios.get("/user", {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
           });
+          
+          console.log("Fetched user data:", response.data);
+
+          if (response.data) {
+            setUser(response.data);
+            setFormData({
+              username: response.data.username || "",
+              email: response.data.email || "",
+              currentPassword: "",
+              newPassword: "",
+              confirmPassword: "",
+            });
+            setLoading(false);
+            return;
+          }
+        } catch (error) {
+          console.warn("Error fetching from /user, trying /api/user:", error);
+          
+          // If the first attempt fails, try with /api/user
+          try {
+            const apiResponse = await axios.get("/api/user", {
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+              },
+            });
+            
+            console.log("Fetched user data from /api/user:", apiResponse.data);
+  
+            if (apiResponse.data) {
+              setUser(apiResponse.data);
+              setFormData({
+                username: apiResponse.data.username || "",
+                email: apiResponse.data.email || "",
+                currentPassword: "",
+                newPassword: "",
+                confirmPassword: "",
+              });
+              setLoading(false);
+              return;
+            }
+          } catch (apiError) {
+            console.error("Error fetching from /api/user:", apiError);
+            throw apiError; // Let the outer catch handle this
+          }
         }
-        setLoading(false);
+        
+        // If we get here, both attempts failed
+        throw new Error("Could not fetch user data from any endpoint");
       } catch (err) {
         console.error("Error fetching user data:", err);
         if (err.response) {
@@ -62,6 +100,7 @@ const Profile = () => {
         setError(
           err.response?.data?.error ||
           err.response?.data?.message ||
+          err.message ||
           "Failed to fetch user data. Please log in again."
         );
         
@@ -112,26 +151,54 @@ const Profile = () => {
       const userId = localStorage.getItem("userId") || user.id;
       console.log("Updating profile for user ID:", userId);
       
-      const response = await axios.put(`/user/${userId}`, formData, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
-
-      console.log("Profile update response:", response.data);
-
-      if (response.data) {
-        // Update user object with the returned data or with form data
-        setUser({
-          ...user,
-          username: response.data.username || formData.username,
-          email: response.data.email || formData.email,
-          id: response.data.id || user.id
+      // Try updating with /user endpoint
+      try {
+        const response = await axios.put(`/user/${userId}`, formData, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
         });
         
-        setSuccess("Profile updated successfully!");
-        setIsEditing(false);
+        console.log("Profile update response:", response.data);
+  
+        if (response.data) {
+          // Update user object with the returned data or with form data
+          setUser({
+            ...user,
+            username: response.data.username || formData.username,
+            email: response.data.email || formData.email,
+            id: response.data.id || user.id
+          });
+          
+          setSuccess("Profile updated successfully!");
+          setIsEditing(false);
+        }
+      } catch (error) {
+        console.warn("Error updating with /user endpoint, trying with /api/user:", error);
+        
+        // If the first attempt fails, try with /api/user
+        const apiResponse = await axios.put(`/api/user/${userId}`, formData, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+        
+        console.log("Profile update response from /api/user:", apiResponse.data);
+
+        if (apiResponse.data) {
+          // Update user object with the returned data or with form data
+          setUser({
+            ...user,
+            username: apiResponse.data.username || formData.username,
+            email: apiResponse.data.email || formData.email,
+            id: apiResponse.data.id || user.id
+          });
+          
+          setSuccess("Profile updated successfully!");
+          setIsEditing(false);
+        }
       }
     } catch (err) {
       console.error("Error updating profile:", err);
@@ -143,6 +210,7 @@ const Profile = () => {
       setError(
         err.response?.data?.error || 
         err.response?.data?.message || 
+        err.message ||
         "Failed to update profile"
       );
       
@@ -170,14 +238,33 @@ const Profile = () => {
     ) {
       try {
         const token = localStorage.getItem("authToken");
-        await axios.delete("/chat/latest-chat", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        alert("Chat history deleted successfully.");
+        
+        // Try deleting with /chat endpoint
+        try {
+          await axios.delete("/chat/latest-chat", {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
+          alert("Chat history deleted successfully.");
+        } catch (error) {
+          console.warn("Error deleting with /chat endpoint, trying with /api/chat:", error);
+          
+          // If the first attempt fails, try with /api/chat
+          await axios.delete("/api/chat/latest-chat", {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
+          alert("Chat history deleted successfully.");
+        }
       } catch (err) {
-        setError(err.response?.data?.message || "Failed to delete chat history");
+        console.error("Error deleting chat history:", err);
+        setError(
+          err.response?.data?.message || 
+          err.message || 
+          "Failed to delete chat history"
+        );
       }
     }
   };
