@@ -138,7 +138,7 @@ const TogetherAIChat = ({ setView }) => {
 			setRetryingMessage(null); // Clear retry state
 
 			// Send message to server using the configured axios instance
-			const { data } = await api.post("/chat/message", {
+			const { data } = await api.post("/api/chat/message", {
 				prompt: messageText,
 				chat_id: chatId,
 				sender: "user",
