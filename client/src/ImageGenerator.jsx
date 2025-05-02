@@ -20,7 +20,11 @@ const ImageGenerator = () => {
 	const fetchImageHistory = async () => {
 		try {
 			const response = await axios.get("/image/history");
-			setImageHistory(response.data);
+			if (response.data && response.data.images) {
+				setImageHistory(response.data.images);
+			} else {
+				setImageHistory([]);
+			}
 		} catch (error) {
 			console.error("Error fetching image history:", error);
 			setImageHistory([]);
@@ -53,19 +57,19 @@ const ImageGenerator = () => {
 				}
 			);
 
-			const imageUrls = Array.isArray(response.data.imageUrls)
-				? response.data.imageUrls
-				: [response.data.imageUrl];
-
-			const botMessages = imageUrls.map((url) => ({
-				sender: "bot",
-				text: "Here is your generated image:",
-				imageUrl: url,
-			}));
-
-			setMessages((prev) => [...prev, ...botMessages]);
-			await fetchImageHistory();
+			if (response.data && response.data.imageUrl) {
+				const botMessage = {
+					sender: "bot",
+					text: "Here is your generated image:",
+					imageUrl: response.data.imageUrl,
+				};
+				setMessages((prev) => [...prev, botMessage]);
+				await fetchImageHistory();
+			} else {
+				throw new Error("No image URL in response");
+			}
 		} catch (error) {
+			console.error("Error generating image:", error);
 			const errorMessage = {
 				sender: "bot",
 				text: `Failed to generate image: ${
@@ -91,22 +95,26 @@ const ImageGenerator = () => {
 	const handleViewImage = async (imageId) => {
 		try {
 			const response = await axios.get(`/image/${imageId}`);
-			const imageUrls = Array.isArray(response.data.imageUrls)
-				? response.data.imageUrls
-				: [response.data.imageUrl];
-
-			const botMessages = imageUrls.map((url) => ({
-				sender: "bot",
-				text: "Previous image:",
-				imageUrl: url,
-			}));
-
-			setMessages((prev) => {
-				const filtered = prev.filter((msg) => msg.text !== "Previous image:");
-				return [...filtered, ...botMessages];
-			});
+			if (response.data && response.data.imageUrl) {
+				const botMessage = {
+					sender: "bot",
+					text: "Previous image:",
+					imageUrl: response.data.imageUrl,
+				};
+				setMessages((prev) => {
+					const filtered = prev.filter((msg) => msg.text !== "Previous image:");
+					return [...filtered, botMessage];
+				});
+			}
 		} catch (error) {
 			console.error("Error fetching image:", error);
+			const errorMessage = {
+				sender: "bot",
+				text: `Failed to fetch image: ${
+					error.response?.data?.error || error.message || "Unknown error"
+				}`,
+			};
+			setMessages((prev) => [...prev, errorMessage]);
 		}
 	};
 
