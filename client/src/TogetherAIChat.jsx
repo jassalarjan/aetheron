@@ -84,7 +84,7 @@ const TogetherAIChat = ({ setView }) => {
 	const fetchChatMessages = async (chatId) => {
 		try {
 			setError(null);
-			const response = await api.get(`/api/chat/chats/${chatId}/messages`);
+			const response = await api.get(`/chat/chats/${chatId}/messages`);
 			if (response.data && response.data.length > 0) {
 				const formattedMessages = response.data.map((msg) => ({
 					sender: msg.sender,
@@ -138,7 +138,7 @@ const TogetherAIChat = ({ setView }) => {
 			setRetryingMessage(null); // Clear retry state
 
 			// Send message to server using the configured axios instance
-			const { data } = await api.post("/api/chat/message", {
+			const { data } = await api.post("/chat/message", {
 				prompt: messageText,
 				chat_id: chatId,
 				sender: "user",
