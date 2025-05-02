@@ -211,10 +211,18 @@ const TogetherAIChat = ({ setView }) => {
 	const handleNewChat = async () => {
 		try {
 			setError(null);
-			setMessages([]);
-			setChatId(null);
-			setPrompt("");
-			await fetchChatHistory();
+			const response = await api.post("/api/chat", {
+				chat_name: `New Chat ${new Date().toLocaleString()}`
+			});
+			
+			if (response.data.chat_id) {
+				setChatId(response.data.chat_id);
+				setMessages([]);
+				setPrompt("");
+				await fetchChatHistory();
+			} else {
+				throw new Error("Failed to create new chat");
+			}
 		} catch (error) {
 			console.error("Error creating new chat:", error);
 			setError("Failed to create new chat. Please try again later.");
