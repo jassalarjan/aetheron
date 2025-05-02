@@ -32,7 +32,7 @@ const Profile = () => {
         }
 
         console.log("Fetching user profile data...");
-        const response = await axios.get("/api/user", {
+        const response = await axios.get("/user", {
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
@@ -112,7 +112,7 @@ const Profile = () => {
       const userId = localStorage.getItem("userId") || user.id;
       console.log("Updating profile for user ID:", userId);
       
-      const response = await axios.put(`/api/user/${userId}`, formData, {
+      const response = await axios.put(`/user/${userId}`, formData, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
