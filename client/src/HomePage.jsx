@@ -131,26 +131,26 @@ function HomePage() {
 	];
 
 	return (
-		<div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-800 text-white p-2 sm:p-4 md:p-6">
+		<div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-800 text-white p-3 sm:p-6">
 			<div className="max-w-7xl mx-auto">
 				{/* Header Section */}
-				<div className="text-center mb-4 sm:mb-8 md:mb-12">
-					<h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold mb-2 sm:mb-4 bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-blue-500">
+				<div className="text-center mb-6 sm:mb-12">
+					<h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold mb-2 sm:mb-4 bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-blue-500">
 						Welcome to Aetheron
 					</h1>
-					<p className="text-xs sm:text-sm md:text-base text-gray-300 max-w-2xl mx-auto px-2">
+					<p className="text-sm sm:text-base md:text-lg text-gray-300 max-w-2xl mx-auto px-2">
 						Your intelligent AI assistant for chat, voice interactions, and creative image generation.
 						Choose how you'd like to interact with your AI Assistant.
 					</p>
 				</div>
 
 				{/* Stats Section */}
-				<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 sm:gap-4 md:gap-6 mb-4 sm:mb-8 md:mb-12">
-					<div className="bg-gray-800 rounded-xl p-3 sm:p-4 md:p-6 shadow-lg">
+				<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-6 mb-6 sm:mb-12">
+					<div className="bg-gray-800 rounded-xl p-4 sm:p-6 shadow-lg">
 						<div className="flex items-center justify-between">
 							<div className="flex-1">
 								<p className="text-gray-400 text-xs sm:text-sm">Total Chats</p>
-								<p className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-blue-400">
+								<p className="text-xl sm:text-2xl md:text-3xl font-bold text-blue-400">
 									{stats.isLoading ? '...' : stats.totalChats}
 								</p>
 								{stats.emptyChats > 0 && (
@@ -174,66 +174,75 @@ function HomePage() {
 									</div>
 								)}
 							</div>
-							<MessageSquare className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 lg:w-8 lg:h-8 text-blue-400 flex-shrink-0 ml-2" />
+							<MessageSquare className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-blue-400 flex-shrink-0 ml-2" />
 						</div>
 					</div>
-					<div className="bg-gray-800 rounded-xl p-3 sm:p-4 md:p-6 shadow-lg">
+					<div className="bg-gray-800 rounded-xl p-4 sm:p-6 shadow-lg">
 						<div className="flex items-center justify-between">
 							<div className="flex-1">
 								<p className="text-gray-400 text-xs sm:text-sm">Voice Interactions</p>
-								<p className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-purple-400">
+								<p className="text-xl sm:text-2xl md:text-3xl font-bold text-purple-400">
 									{stats.isLoading ? '...' : stats.totalVoiceInteractions}
 								</p>
 							</div>
-							<Mic className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 lg:w-8 lg:h-8 text-purple-400 flex-shrink-0 ml-2" />
+							<Mic className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-purple-400 flex-shrink-0 ml-2" />
 						</div>
 					</div>
-					<div className="bg-gray-800 rounded-xl p-3 sm:p-4 md:p-6 shadow-lg sm:col-span-2 md:col-span-1">
+					<div className="bg-gray-800 rounded-xl p-4 sm:p-6 shadow-lg sm:col-span-2 md:col-span-1">
 						<div className="flex items-center justify-between">
 							<div className="flex-1">
 								<p className="text-gray-400 text-xs sm:text-sm">Generated Images</p>
-								<p className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-green-400">
+								<p className="text-xl sm:text-2xl md:text-3xl font-bold text-green-400">
 									{stats.isLoading ? '...' : stats.totalImages}
 								</p>
 							</div>
-							<Image className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 lg:w-8 lg:h-8 text-green-400 flex-shrink-0 ml-2" />
+							<Image className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-green-400 flex-shrink-0 ml-2" />
 						</div>
 					</div>
 				</div>
 
-				{/* Options Grid */}
-				<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-6">
-					{options.map((option, index) => (
+				{/* Features Grid */}
+				<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 md:gap-8">
+					{options.map((option, idx) => (
 						<div
-							key={index}
-							onClick={(e) => option.title === "AI Chat" && stats.emptyChats > 0 ? null : handleNavigation(option.path)}
-							className={`relative overflow-hidden rounded-2xl shadow-lg transition-all duration-300 transform hover:scale-[1.03] cursor-pointer bg-gradient-to-br ${option.color}`}
+							key={idx}
+							onClick={() => handleNavigation(option.path)}
+							className={`cursor-pointer group relative overflow-hidden rounded-xl shadow-lg transition-all duration-300 hover:shadow-2xl hover:-translate-y-1`}
 						>
-							<div className="p-4 sm:p-6">
-								<div className="flex justify-between items-start">
-									<h3 className="text-base sm:text-lg md:text-xl font-bold text-white mb-2">{option.title}</h3>
-									<div className="p-2 sm:p-3 bg-white/20 rounded-lg">
+							<div className={`absolute inset-0 bg-gradient-to-br ${option.color} opacity-90`} />
+							<div className="relative p-4 sm:p-6">
+								<div className="flex items-center justify-between mb-3 sm:mb-4">
+									<div className="w-10 h-10 sm:w-12 sm:h-12 bg-white/10 rounded-lg flex items-center justify-center">
 										{option.icon}
 									</div>
+									{option.stats !== null && (
+										<div className="flex flex-col items-end">
+											<span className="text-lg sm:text-xl md:text-2xl font-bold text-white/90">
+												{stats.isLoading ? '...' : option.stats}
+											</span>
+											{option.emptyChats > 0 && idx === 0 && (
+												<span className="text-xs sm:text-sm text-yellow-200 mt-1 flex items-center">
+													<AlertCircle className="w-3 h-3 mr-1" />
+													{option.emptyChats} empty
+												</span>
+											)}
+										</div>
+									)}
 								</div>
-								<p className="text-xs sm:text-sm text-white/80 mb-2 sm:mb-4">{option.description}</p>
-								
-								{option.stats !== null && (
-									<div className="mt-auto">
-										<div className="text-xs text-white/60">
-											{option.title === "AI Chat" ? "Total Chats" : 
-											 option.title === "Voice Chat" ? "Voice Interactions" : 
-											 option.title === "Image Generator" ? "Generated Images" : ""}
-										</div>
-										<div className="text-lg sm:text-xl font-bold text-white">
-											{stats.isLoading ? '...' : option.stats}
-										</div>
-									</div>
-								)}
+								<h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-1 sm:mb-2 text-white">{option.title}</h2>
+								<p className="text-sm sm:text-base text-white/80">{option.description}</p>
 							</div>
 						</div>
 					))}
 				</div>
+
+				{/* Footer */}
+				<footer className="mt-8 sm:mt-12 md:mt-16 text-center">
+					<div className="text-xs sm:text-sm text-gray-400">
+						<p>&copy; {new Date().getFullYear()} Aetheron AI Platform</p>
+						<p className="mt-1 sm:mt-2">Powered by advanced AI technology</p>
+					</div>
+				</footer>
 			</div>
 		</div>
 	);

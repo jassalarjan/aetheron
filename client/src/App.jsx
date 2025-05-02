@@ -7,7 +7,6 @@ import {
 } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./styles/tailwind.css";
-import "./index.css";
 import axios from "axios";
 
 // Importing components
@@ -30,7 +29,6 @@ function App() {
 	const [isAuthenticated, setIsAuthenticated] = useState(false);
 	const [sidebarHovered, setSidebarHovered] = useState(false);
 	const [isLoading, setIsLoading] = useState(true);
-	const [windowWidth, setWindowWidth] = useState(window.innerWidth);
 
 	useEffect(() => {
 		const checkAuth = async () => {
@@ -52,28 +50,7 @@ function App() {
 		};
 
 		checkAuth();
-
-		// Add window resize listener
-		const handleResize = () => {
-			setWindowWidth(window.innerWidth);
-		};
-		
-		window.addEventListener('resize', handleResize);
-		return () => window.removeEventListener('resize', handleResize);
 	}, []);
-
-	// Calculate main content margin based on sidebar state and screen size
-	const getMainContentClass = () => {
-		// On mobile screens (less than 768px), don't apply margin
-		if (windowWidth < 768) {
-			return "min-h-screen p-2 sm:p-4";
-		}
-		
-		// On larger screens, adjust margin based on sidebar hover state
-		return `transition-all duration-300 min-h-screen p-4 ${
-			isAuthenticated ? (sidebarHovered ? "ml-64" : "ml-20") : ""
-		}`;
-	};
 
 	if (isLoading) {
 		return <LoadingSpinner />;
@@ -91,7 +68,9 @@ function App() {
 					)}
 
 					<main
-						className={getMainContentClass()}
+						className={`transition-all duration-300 min-h-screen ${
+							isAuthenticated ? (sidebarHovered ? "ml-56" : "ml-20") : ""
+						}`}
 					>
 						<Routes>
 							{/* Public routes */}

@@ -1,17 +1,10 @@
 *{
     scrollbar-width: none;
-    box-sizing: border-box;
 }
-
-html, body {
-    margin: 0;
-    padding: 0;
-    overflow-x: hidden;
-}
-
 #root {
-	max-width: 100%;
+	max-width: 1280px;
 	margin: 0 auto;
+	padding: 2rem;
 	text-align: center;
 }
 
@@ -44,13 +37,7 @@ html, body {
 }
 
 .card {
-	padding: 1rem;
-}
-
-@media (min-width: 768px) {
-    .card {
-        padding: 2rem;
-    }
+	padding: 2em;
 }
 
 .read-the-docs {
@@ -62,155 +49,56 @@ body {
     background-color: #ffffff; /* White background */
     color: #333333; /* Dark gray text for readability */
     font-family: 'Arial', sans-serif; /* Professional font */
+    margin: 0;
+    padding: 0;
 }
 
 .app-container {
     display: flex;
-    flex-direction: column;
-    min-height: 100vh;
+    height: 100vh;
     background-color: #f8f9fa; /* Light gray for subtle contrast */
 }
 
-@media (min-width: 768px) {
-    .app-container {
-        flex-direction: row;
-    }
-}
-
 .sidebar {
-    width: 100%;
+    width: 300px;
     background-color: #ffffff; /* White background for sidebar */
-    border-bottom: 1px solid #e0e0e0; /* Light gray border */
-    padding: 10px;
-}
-
-@media (min-width: 768px) {
-    .sidebar {
-        width: 250px;
-        min-height: 100vh;
-        border-right: 1px solid #e0e0e0;
-        border-bottom: none;
-        padding: 20px;
-    }
+    border-right: 1px solid #e0e0e0; /* Light gray border */
+    padding: 20px;
 }
 
 .message {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     margin-bottom: 15px;
 }
 
 .message img {
     border-radius: 50%;
     margin-right: 10px;
-    width: 30px;
-    height: 30px;
-}
-
-@media (min-width: 576px) {
-    .message img {
-        width: 40px;
-        height: 40px;
-    }
 }
 
 .message-text {
     background-color: #f1f1f1; /* Light gray bubble */
-    padding: 8px;
+    padding: 10px;
     border-radius: 8px;
-    font-size: 0.9rem;
-    max-width: 100%;
-    word-wrap: break-word;
-}
-
-@media (min-width: 576px) {
-    .message-text {
-        padding: 10px;
-        font-size: 1rem;
-        max-width: 80%;
-    }
 }
 
 .main-content {
     flex-grow: 1;
-    padding: 10px;
+    padding: 20px;
     background-color: #ffffff; /* White background for main content */
-}
-
-@media (min-width: 576px) {
-    .main-content {
-        padding: 20px;
-    }
 }
 
 .main-button {
     background-color: #007bff; /* Professional blue */
     color: white;
     border: none;
-    padding: 8px 16px;
+    padding: 10px 20px;
     border-radius: 5px;
     cursor: pointer;
     transition: background-color 0.3s;
-    font-size: 0.9rem;
-}
-
-@media (min-width: 576px) {
-    .main-button {
-        padding: 10px 20px;
-        font-size: 1rem;
-    }
 }
 
 .main-button:hover {
     background-color: #0056b3; /* Darker blue on hover */
-}
-
-/* Responsive form elements */
-input, select, textarea {
-    width: 100%;
-    padding: 8px;
-    margin-bottom: 10px;
-    border: 1px solid #e0e0e0;
-    border-radius: 4px;
-    font-size: 0.9rem;
-}
-
-@media (min-width: 576px) {
-    input, select, textarea {
-        padding: 10px;
-        font-size: 1rem;
-    }
-}
-
-/* Responsive tables */
-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-bottom: 1rem;
-    overflow-x: auto;
-    display: block;
-}
-
-@media (min-width: 768px) {
-    table {
-        display: table;
-    }
-}
-
-th, td {
-    padding: 0.5rem;
-    text-align: left;
-    border-bottom: 1px solid #e0e0e0;
-}
-
-/* Responsive images */
-img {
-    max-width: 100%;
-    height: auto;
-}
-
-/* Accessibility focus styles */
-:focus {
-    outline: 2px solid #007bff;
-    outline-offset: 2px;
 }
