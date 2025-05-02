@@ -57,18 +57,18 @@ const Profile = () => {
             return;
           }
         } catch (error) {
-          console.warn("Error fetching from /user, trying /user:", error);
+          console.warn("Error fetching from /user, trying /api/user:", error);
           
-          // If the first attempt fails, try with /user
+          // If the first attempt fails, try with /api/user
           try {
-            const apiResponse = await axios.get("/user", {
+            const apiResponse = await axios.get("/api/user", {
               headers: {
                 Authorization: `Bearer ${token}`,
                 "Content-Type": "application/json",
               },
             });
             
-            console.log("Fetched user data from /user:", apiResponse.data);
+            console.log("Fetched user data from /api/user:", apiResponse.data);
   
             if (apiResponse.data) {
               setUser(apiResponse.data);
@@ -83,7 +83,7 @@ const Profile = () => {
               return;
             }
           } catch (apiError) {
-            console.error("Error fetching from /user:", apiError);
+            console.error("Error fetching from /api/user:", apiError);
             throw apiError; // Let the outer catch handle this
           }
         }
@@ -175,17 +175,17 @@ const Profile = () => {
           setIsEditing(false);
         }
       } catch (error) {
-        console.warn("Error updating with /user endpoint, trying with /user:", error);
+        console.warn("Error updating with /user endpoint, trying with /api/user:", error);
         
-        // If the first attempt fails, try with /user
-        const apiResponse = await axios.put(`/user/${userId}`, formData, {
+        // If the first attempt fails, try with /api/user
+        const apiResponse = await axios.put(`/api/user/${userId}`, formData, {
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
         });
         
-        console.log("Profile update response from /user:", apiResponse.data);
+        console.log("Profile update response from /api/user:", apiResponse.data);
 
         if (apiResponse.data) {
           // Update user object with the returned data or with form data
@@ -248,10 +248,10 @@ const Profile = () => {
           });
           alert("Chat history deleted successfully.");
         } catch (error) {
-          console.warn("Error deleting with /chat endpoint, trying with /chat:", error);
+          console.warn("Error deleting with /chat endpoint, trying with /api/chat:", error);
           
-          // If the first attempt fails, try with /chat
-          await axios.delete("/chat/latest-chat", {
+          // If the first attempt fails, try with /api/chat
+          await axios.delete("/api/chat/latest-chat", {
             headers: {
               Authorization: `Bearer ${token}`,
             },
