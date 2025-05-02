@@ -83,10 +83,28 @@ const VoiceRecognition = () => {
 	const sendToAI = async (text) => {
 		try {
 			setIsLoading(true);
+			console.log("Sending message to AI:", { text, chatId });
+			
+			// If we don't have a chatId, get one first
+			let currentChatId = chatId;
+			if (!currentChatId) {
+				try {
+					const chatResponse = await api.get("/nlp/latest-chat");
+					currentChatId = chatResponse.data.chat_id;
+					setChatId(currentChatId);
+					console.log("Retrieved new chat ID:", currentChatId);
+				} catch (chatErr) {
+					console.error("Failed to get chat ID:", chatErr);
+					throw new Error("Failed to initialize chat");
+				}
+			}
+			
 			const res = await api.post("/nlp", {
 				name: text,
-				chatId: chatId
+				chatId: currentChatId
 			});
+			
+			console.log("AI response received:", res.data);
 			
 			if (res.data.response) {
 				addAIMessage(res.data.response);
@@ -96,6 +114,11 @@ const VoiceRecognition = () => {
 			}
 		} catch (error) {
 			console.error("AI response error:", error);
+			// Log more detailed error information
+			if (error.response) {
+				console.error("Error response data:", error.response.data);
+				console.error("Error response status:", error.response.status);
+			}
 			const errMsg = "Sorry, I couldn't process that. Please try again.";
 			addAIMessage(errMsg);
 			speakAI(errMsg);
