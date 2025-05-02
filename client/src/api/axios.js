@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // Use a more flexible base URL without the /api suffix
-const baseURL = 'https://aetheron-worker.jassalarjansingh.workers.dev';
+const baseURL = 'https://aetheron-worker.jassalarjansingh.workers.dev/api';
 console.log('Creating axios instance with baseURL:', baseURL);
 
 const api = axios.create({
