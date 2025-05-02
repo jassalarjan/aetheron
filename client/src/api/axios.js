@@ -9,7 +9,8 @@ const api = axios.create({
     headers: {
         'Content-Type': 'application/json'
     },
-    withCredentials: true
+    withCredentials: true,
+    timeout: 30000 // 30 second timeout for long operations
 });
 
 // Add request interceptor to include auth token
@@ -71,6 +72,33 @@ api.interceptors.response.use(
                 ...error.config,
                 url: newUrl
             });
+        }
+        
+        // For 500 errors, check if it's a server timeout
+        if (error.response?.status === 500) {
+            console.error('Server error (500) detected:', error.response?.data);
+            
+            // Check if error is related to Together AI API
+            if (error.config?.url?.includes('/chat/message') || 
+                error.config?.url?.includes('/image')) {
+                const errorDetails = error.response?.data?.details || '';
+                
+                // If it's an AI service timeout or rate limit issue
+                if (errorDetails.includes('timeout') || 
+                    errorDetails.includes('rate limit') || 
+                    errorDetails.includes('overloaded')) {
+                    
+                    console.log('AI service timeout or rate limit detected - retrying in 2 seconds...');
+                    
+                    // Return a promise that retries after a delay
+                    return new Promise(resolve => {
+                        setTimeout(() => {
+                            console.log('Retrying request after 500 error');
+                            resolve(api(error.config));
+                        }, 2000);
+                    });
+                }
+            }
         }
         
         if (error.message === 'Network Error') {

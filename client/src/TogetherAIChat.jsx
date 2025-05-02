@@ -24,6 +24,7 @@ const TogetherAIChat = ({ setView }) => {
 	const [error, setError] = useState(null);
 	const [isInitialLoading, setIsInitialLoading] = useState(true);
 	const chatBoxRef = useRef(null);
+	const [retryingMessage, setRetryingMessage] = useState(null);
 
 	useEffect(() => {
 		const token = localStorage.getItem("authToken");
@@ -114,7 +115,7 @@ const TogetherAIChat = ({ setView }) => {
 	}, [messages]);
 
 	const handleSendMessage = async () => {
-		if (!prompt.trim() || isLoading) return;
+		if ((!prompt.trim() && !retryingMessage) || isLoading) return;
 
 		try {
 			setIsLoading(true);
@@ -122,19 +123,23 @@ const TogetherAIChat = ({ setView }) => {
 			const userPreferences = localStorage.getItem("userPreferences") || "";
 			const expertiseDomain = localStorage.getItem("expertiseDomain") || "";
 
+			// Use retryingMessage if available, otherwise use prompt
+			const messageText = retryingMessage || prompt;
+
 			// Add user message to UI immediately with timestamp
 			const userMessage = { 
 				sender: "user", 
-				text: prompt,
+				text: messageText,
 				timestamp: new Date().toISOString(),
 				status: 'sending'
 			};
 			setMessages((prev) => [...prev, userMessage]);
 			setPrompt(""); // Clear input immediately for better UX
+			setRetryingMessage(null); // Clear retry state
 
 			// Send message to server using the configured axios instance
 			const { data } = await api.post("/chat/message", {
-				prompt,
+				prompt: messageText,
 				chat_id: chatId,
 				sender: "user",
 				userPreferences,
@@ -165,11 +170,27 @@ const TogetherAIChat = ({ setView }) => {
 		} catch (error) {
 			console.error("Error sending message:", error);
 			let errorMessage = "An error occurred while sending your message.";
+			let retryable = false;
 
 			if (error.response?.status === 401 || error.response?.status === 403) {
 				localStorage.removeItem("authToken");
 				window.location.href = "/login";
 				return;
+			} else if (error.response?.status === 500) {
+				const errorData = error.response?.data;
+				
+				// Check for specific Together AI service issues
+				if (errorData?.details?.includes('timeout') || 
+					errorData?.details?.includes('rate limit') ||
+					errorData?.details?.includes('overloaded')) {
+					errorMessage = "The AI service is currently experiencing high demand. Please try again in a moment.";
+					retryable = true;
+				} else if (errorData?.error?.includes('AI service') || errorData?.error?.includes('Together AI')) {
+					errorMessage = "There was an issue connecting to the AI service. Please try again.";
+					retryable = true;
+				} else {
+					errorMessage = errorData?.error || "A server error occurred. Our team has been notified.";
+				}
 			} else if (error.response?.data?.error) {
 				errorMessage = error.response.data.error;
 			} else if (!navigator.onLine) {
@@ -186,9 +207,10 @@ const TogetherAIChat = ({ setView }) => {
 			// Add error message to UI
 			const errorBotMessage = {
 				sender: "ai",
-				text: `Error: ${errorMessage}`,
+				text: `Error: ${errorMessage}${retryable ? ' (You can try again)' : ''}`,
 				timestamp: new Date().toISOString(),
-				status: 'error'
+				status: 'error',
+				retryable
 			};
 			setMessages((prev) => [...prev, errorBotMessage]);
 			setError(errorMessage);
@@ -239,6 +261,30 @@ const TogetherAIChat = ({ setView }) => {
 			e.preventDefault();
 			handleSendMessage();
 		}
+	};
+
+	// Function to retry sending a failed message
+	const handleRetry = async (messageText) => {
+		if (isLoading) return;
+		
+		// Set up for retry
+		setRetryingMessage(messageText);
+		setPrompt(messageText); // Set the original message in the input
+		setError(null); // Clear any existing errors
+		
+		// Remove the error message and failed user message
+		setMessages(prev => 
+			prev.filter(msg => 
+				!(msg.status === 'error' || 
+				 (msg.status === 'failed' && msg.text === messageText))
+			)
+		);
+		
+		// Focus on prompt
+		setTimeout(() => {
+			// Automatically send the message
+			handleSendMessage();
+		}, 100);
 	};
 
 	if (isInitialLoading) {
@@ -391,7 +437,25 @@ const TogetherAIChat = ({ setView }) => {
 												<Loader2 className="w-3 h-3 animate-spin" />
 											)}
 											{message.status === 'failed' && (
-												<span className="text-red-500">Failed to send</span>
+												<>
+													<span className="text-red-500 mr-2">Failed to send</span>
+													<button 
+														onClick={() => handleRetry(message.text)}
+														className="text-blue-500 hover:text-blue-700 font-medium"
+														disabled={isLoading}
+													>
+														Retry
+													</button>
+												</>
+											)}
+											{message.status === 'error' && message.retryable && (
+												<button 
+													onClick={() => handleRetry(prompt)}
+													className="text-blue-500 hover:text-blue-700 font-medium ml-2"
+													disabled={isLoading}
+												>
+													Retry
+												</button>
 											)}
 										</div>
 									</div>
