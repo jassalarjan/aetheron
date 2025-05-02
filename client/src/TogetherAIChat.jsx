@@ -211,7 +211,7 @@ const TogetherAIChat = ({ setView }) => {
 	const handleNewChat = async () => {
 		try {
 			setError(null);
-			const response = await api.post("/api/chat", {
+			const response = await api.post("/chat", {
 				chat_name: `New Chat ${new Date().toLocaleString()}`
 			});
 			
