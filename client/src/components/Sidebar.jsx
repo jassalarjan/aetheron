@@ -8,31 +8,58 @@ import {
   Cpu,
   Bot,
   LogOut,
-  Settings,
   BookOpen,
-  Mic
+  Mic,
+  Menu,
+  X
 } from 'lucide-react';
 
 const Sidebar = ({ setSidebarHovered, isAuthenticated }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const location = useLocation();
 
   useEffect(() => {
     const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
+      const mobile = window.innerWidth < 768;
+      setIsMobile(mobile);
+      
+      // Auto-close sidebar on resize to desktop if it was open on mobile
+      if (!mobile && isSidebarOpen) {
+        setIsSidebarOpen(false);
+      }
     };
     
     checkMobile();
     window.addEventListener('resize', checkMobile);
     
     return () => window.removeEventListener('resize', checkMobile);
-  }, []);
+  }, [isSidebarOpen]);
+
+  // Add/remove body class when sidebar is open/closed
+  useEffect(() => {
+    if (isSidebarOpen) {
+      document.body.classList.add('sidebar-open');
+    } else {
+      document.body.classList.remove('sidebar-open');
+    }
+  }, [isSidebarOpen]);
 
   const handleHover = (val) => {
     if (!isMobile) {
       setIsHovered(val);
       if (setSidebarHovered) setSidebarHovered(val);
+    }
+  };
+
+  const toggleSidebar = () => {
+    setIsSidebarOpen(!isSidebarOpen);
+  };
+
+  const closeSidebar = () => {
+    if (isMobile) {
+      setIsSidebarOpen(false);
     }
   };
 
@@ -96,67 +123,85 @@ const Sidebar = ({ setSidebarHovered, isAuthenticated }) => {
   ];
 
   return (
-    <div
-      className={`fixed top-0 left-0 h-full bg-gray-900 text-white shadow-lg transition-all duration-300 z-50
-      ${isHovered ? 'w-64' : 'w-20'} ${isMobile ? 'w-64' : ''}`}
-      onMouseEnter={() => handleHover(true)}
-      onMouseLeave={() => handleHover(false)}
-    >
-      <div className="p-4 border-b border-gray-700">
-        <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 bg-indigo-500 rounded-lg flex items-center justify-center">
-            <Bot className="w-6 h-6" />
-          </div>
-          {(isHovered || isMobile) && (
-            <span className="text-xl font-bold text-white">Aetheron</span>
-          )}
-        </div>
-      </div>
+    <>
+      {/* Mobile Toggle Button */}
+      {isMobile && (
+        <button 
+          aria-label="Toggle navigation menu"
+          className="fixed top-4 left-4 z-50 bg-gray-800 text-white p-2 rounded-md shadow-lg"
+          onClick={toggleSidebar}
+        >
+          {isSidebarOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+        </button>
+      )}
 
-      <nav className="mt-6">
-        <ul className="space-y-2 px-3">
-          {linkItems.map((item, idx) => {
-            const isActive = location.pathname === item.path;
-            return (
-              <li key={idx}>
-                <Link
-                  to={item.path}
-                  className={`flex items-center gap-4 px-4 py-3 rounded-lg transition-all duration-200 group
-                    ${isActive ? item.active : 'hover:bg-gray-800'}`}
-                  title={item.description}
-                  aria-label={item.label}
-                >
-                  <span className={`${isActive ? 'text-white' : 'text-gray-400 group-hover:text-white'}`}>
-                    {item.icon}
-                  </span>
-                  {(isHovered || isMobile) && (
-                    <span className="text-sm font-medium">{item.label}</span>
-                  )}
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
-      </nav>
+      {/* Sidebar Overlay - only visible on mobile when sidebar is open */}
+      {isMobile && <div className="sidebar-overlay" onClick={closeSidebar}></div>}
 
-      <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-700">
-        <div className="flex items-center space-x-3">
-          <div className="w-8 h-8 bg-indigo-500 rounded-full flex items-center justify-center">
-            <User className="w-4 h-4" />
-          </div>
-          {(isHovered || isMobile) && (
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate">
-                {localStorage.getItem('username') || 'User'}
-              </p>
-              <p className="text-xs text-gray-400 truncate">
-                {localStorage.getItem('email') || 'user@example.com'}
-              </p>
+      <div
+        className={`fixed top-0 left-0 h-full bg-gray-900 text-white shadow-lg transition-all duration-300 z-50
+        ${(isHovered && !isMobile) ? 'w-64' : 'w-20'} 
+        ${isMobile ? (isSidebarOpen ? 'translate-x-0' : 'translate-x-[-100%]') : 'translate-x-0'}`}
+        onMouseEnter={() => handleHover(true)}
+        onMouseLeave={() => handleHover(false)}
+      >
+        <div className="p-4 border-b border-gray-700">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 bg-indigo-500 rounded-lg flex items-center justify-center">
+              <Bot className="w-6 h-6" />
             </div>
-          )}
+            {((isHovered && !isMobile) || (isMobile && isSidebarOpen)) && (
+              <span className="text-xl font-bold text-white">Aetheron</span>
+            )}
+          </div>
+        </div>
+
+        <nav className="mt-6">
+          <ul className="space-y-2 px-3">
+            {linkItems.map((item, idx) => {
+              const isActive = location.pathname === item.path;
+              return (
+                <li key={idx}>
+                  <Link
+                    to={item.path}
+                    className={`flex items-center gap-4 px-4 py-3 rounded-lg transition-all duration-200 group
+                      ${isActive ? item.active : 'hover:bg-gray-800'}`}
+                    title={item.description}
+                    aria-label={item.label}
+                    onClick={closeSidebar}
+                  >
+                    <span className={`${isActive ? 'text-white' : 'text-gray-400 group-hover:text-white'}`}>
+                      {item.icon}
+                    </span>
+                    {((isHovered && !isMobile) || (isMobile && isSidebarOpen)) && (
+                      <span className="text-sm font-medium">{item.label}</span>
+                    )}
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </nav>
+
+        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-700">
+          <div className="flex items-center space-x-3">
+            <div className="w-8 h-8 bg-indigo-500 rounded-full flex items-center justify-center">
+              <User className="w-4 h-4" />
+            </div>
+            {((isHovered && !isMobile) || (isMobile && isSidebarOpen)) && (
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium truncate">
+                  {localStorage.getItem('username') || 'User'}
+                </p>
+                <p className="text-xs text-gray-400 truncate">
+                  {localStorage.getItem('email') || 'user@example.com'}
+                </p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 
