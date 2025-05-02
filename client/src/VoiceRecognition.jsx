@@ -7,6 +7,7 @@ const VoiceRecognition = () => {
 	const [isListening, setIsListening] = useState(false);
 	const [aiSpeaking, setAiSpeaking] = useState(false);
 	const [controlsVisible, setControlsVisible] = useState(false);
+	const [isLoading, setIsLoading] = useState(false);
 
 	const recognitionRef = useRef(null);
 	const synthRef = useRef(window.speechSynthesis);
@@ -37,21 +38,37 @@ const VoiceRecognition = () => {
 			setIsListening(false);
 		};
 
-		fetchOrCreateChat();
+		initializeChat();
 	}, []);
 
-	const fetchOrCreateChat = async () => {
+	const initializeChat = async () => {
 		try {
+			setIsLoading(true);
+			// Get or create a new NLP chat
 			const response = await api.get("/nlp/latest-chat");
-			const chat_id = response.data.chat_id || 1;
-			setChatId(chat_id);
+			const newChatId = response.data.chat_id;
+			setChatId(newChatId);
 
-			// Fetch message history
-			const historyRes = await api.get(`/nlp/${chat_id}/messages`);
-			setMessages(historyRes.data.messages || []);
+			// Try to fetch message history
+			try {
+				const historyRes = await api.get(`/nlp/${newChatId}/messages`);
+				if (historyRes.data.messages && historyRes.data.messages.length > 0) {
+					setMessages(historyRes.data.messages.map(msg => ({
+						sender: msg.response ? "ai" : "user",
+						text: msg.response || msg.message
+					})));
+				} else {
+					setMessages([]); // Start with empty messages if no history
+				}
+			} catch (error) {
+				console.log("No previous messages found, starting fresh");
+				setMessages([]);
+			}
 		} catch (error) {
-			console.error("Failed to load chat:", error);
-			setChatId(1);
+			console.error("Failed to initialize chat:", error);
+			setMessages([]);
+		} finally {
+			setIsLoading(false);
 		}
 	};
 
@@ -65,18 +82,25 @@ const VoiceRecognition = () => {
 
 	const sendToAI = async (text) => {
 		try {
+			setIsLoading(true);
 			const res = await api.post("/nlp", {
 				name: text,
-				chatId: chatId,
+				chatId: chatId
 			});
-			const reply = res.data.response;
-			addAIMessage(reply);
-			speakAI(reply);
+			
+			if (res.data.response) {
+				addAIMessage(res.data.response);
+				speakAI(res.data.response);
+			} else {
+				throw new Error("No response from AI");
+			}
 		} catch (error) {
 			console.error("AI response error:", error);
-			const errMsg = "Sorry, I couldn't process that.";
+			const errMsg = "Sorry, I couldn't process that. Please try again.";
 			addAIMessage(errMsg);
 			speakAI(errMsg);
+		} finally {
+			setIsLoading(false);
 		}
 	};
 
@@ -96,7 +120,7 @@ const VoiceRecognition = () => {
 	};
 
 	const startListening = () => {
-		if (recognitionRef.current && !isListening) {
+		if (recognitionRef.current && !isListening && !isLoading) {
 			setControlsVisible(false);
 			recognitionRef.current.start();
 			setIsListening(true);
@@ -106,7 +130,7 @@ const VoiceRecognition = () => {
 	const stopSpeaking = () => {
 		synthRef.current.cancel();
 		setAiSpeaking(false);
-		setControlsVisible(false);
+		setControlsVisible(true);
 	};
 
 	return (
@@ -114,6 +138,11 @@ const VoiceRecognition = () => {
 			<h2 className="text-3xl font-bold mb-6 text-[#5b21b6] tracking-wide">🎤 Aetheron Voice AI</h2>
 
 			<div className="w-full max-w-3xl bg-gradient-to-br from-[#f5f3ff] to-[#ede9fe] rounded-xl shadow-lg p-6 mb-6 overflow-y-auto h-[400px] space-y-4">
+				{isLoading && (
+					<div className="flex justify-center items-center h-full">
+						<div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#7c3aed]"></div>
+					</div>
+				)}
 				{messages.map((msg, i) => (
 					<div
 						key={i}
@@ -132,7 +161,7 @@ const VoiceRecognition = () => {
 				{isListening && <p className="text-green-500 animate-pulse">🎧 Listening...</p>}
 				{aiSpeaking && <p className="text-yellow-500 animate-pulse">🗣️ Speaking...</p>}
 
-				{!isListening && !aiSpeaking && !controlsVisible && (
+				{!isListening && !aiSpeaking && !controlsVisible && !isLoading && (
 					<button
 						className="bg-[#7c3aed] hover:bg-[#6b21a8] text-white px-6 py-3 rounded-lg transition-all shadow-md"
 						onClick={startListening}
@@ -141,7 +170,7 @@ const VoiceRecognition = () => {
 					</button>
 				)}
 
-				{controlsVisible && (
+				{controlsVisible && !isLoading && (
 					<div className="flex space-x-4">
 						<button
 							className="bg-[#7c3aed] hover:bg-[#6b21a8] text-white px-5 py-2 rounded-md transition-all shadow"
