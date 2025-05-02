@@ -15,6 +15,12 @@ api.interceptors.request.use((config) => {
     if (token) {
         config.headers.Authorization = `Bearer ${token}`;
     }
+    
+    // Special handling for user profile endpoints
+    if (config.url.includes('/user')) {
+        console.log('User profile request detected, adding CORS headers');
+    }
+    
     return config;
 }, (error) => {
     console.error('Request error:', error);
@@ -23,7 +29,10 @@ api.interceptors.request.use((config) => {
 
 // Add response interceptor to handle common errors
 api.interceptors.response.use(
-    (response) => response,
+    (response) => {
+        console.log('Response received from:', response.config.url);
+        return response;
+    },
     (error) => {
         console.error('Response error:', error.message);
         
@@ -34,6 +43,7 @@ api.interceptors.response.use(
         }
         
         if (error.response?.status === 401 || error.response?.status === 403) {
+            console.error('Authentication error detected');
             // Clear invalid token
             localStorage.removeItem('authToken');
             localStorage.removeItem('userId');
@@ -41,6 +51,11 @@ api.interceptors.response.use(
             // Redirect to login
             window.location.href = '/login';
         }
+        
+        if (error.response?.status === 404) {
+            console.error('Resource not found:', error.config.url);
+        }
+        
         return Promise.reject(error);
     }
 );

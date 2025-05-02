@@ -31,19 +31,21 @@ const Profile = () => {
           return;
         }
 
-        const response = await axios.get("/user", {
+        console.log("Fetching user profile data...");
+        const response = await axios.get("/api/user", {
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
         });
+        
         console.log("Fetched user data:", response.data);
 
         if (response.data) {
           setUser(response.data);
           setFormData({
-            username: response.data.username,
-            email: response.data.email,
+            username: response.data.username || "",
+            email: response.data.email || "",
             currentPassword: "",
             newPassword: "",
             confirmPassword: "",
@@ -51,12 +53,21 @@ const Profile = () => {
         }
         setLoading(false);
       } catch (err) {
+        console.error("Error fetching user data:", err);
+        if (err.response) {
+          console.error("Response status:", err.response.status);
+          console.error("Response data:", err.response.data);
+        }
+        
         setError(
+          err.response?.data?.error ||
           err.response?.data?.message ||
-            "Failed to fetch user data. Please log in again."
+          "Failed to fetch user data. Please log in again."
         );
+        
         setLoading(false);
-        if (err.response?.status === 401) {
+        
+        if (err.response?.status === 401 || err.response?.status === 403) {
           localStorage.removeItem("authToken");
           localStorage.removeItem("userId");
           navigate("/login");
@@ -98,22 +109,44 @@ const Profile = () => {
         }
       }
 
-      const userId = localStorage.getItem("userId");
-      const response = await axios.put(`/user/${userId}`, formData, {
+      const userId = localStorage.getItem("userId") || user.id;
+      console.log("Updating profile for user ID:", userId);
+      
+      const response = await axios.put(`/api/user/${userId}`, formData, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
       });
 
+      console.log("Profile update response:", response.data);
+
       if (response.data) {
-        setUser(response.data);
+        // Update user object with the returned data or with form data
+        setUser({
+          ...user,
+          username: response.data.username || formData.username,
+          email: response.data.email || formData.email,
+          id: response.data.id || user.id
+        });
+        
         setSuccess("Profile updated successfully!");
         setIsEditing(false);
       }
     } catch (err) {
-      setError(err.response?.data?.message || "Failed to update profile");
-      if (err.response?.status === 401) {
+      console.error("Error updating profile:", err);
+      if (err.response) {
+        console.error("Response status:", err.response.status);
+        console.error("Response data:", err.response.data);
+      }
+      
+      setError(
+        err.response?.data?.error || 
+        err.response?.data?.message || 
+        "Failed to update profile"
+      );
+      
+      if (err.response?.status === 401 || err.response?.status === 403) {
         localStorage.removeItem("authToken");
         localStorage.removeItem("userId");
         navigate("/login");
