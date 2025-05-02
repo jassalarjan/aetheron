@@ -36,7 +36,7 @@ const TogetherAIChat = ({ setView }) => {
 	const fetchChatHistory = async () => {
 		try {
 			setError(null);
-			const response = await api.get("/api/chat/chat-history");
+			const response = await api.get("/chat/chat-history");
 			if (response.data.chats && response.data.chats.length > 0) {
 				setChatHistory(response.data.chats);
 			} else {
@@ -56,7 +56,7 @@ const TogetherAIChat = ({ setView }) => {
 	const fetchOrCreateChat = async () => {
 		try {
 			setError(null);
-			const response = await api.get("/api/chat/latest-chat");
+			const response = await api.get("/chat/latest-chat");
 			if (response.data.chat_id) {
 				setChatId(response.data.chat_id);
 				// Fetch messages for this chat
@@ -83,7 +83,7 @@ const TogetherAIChat = ({ setView }) => {
 	const fetchChatMessages = async (chatId) => {
 		try {
 			setError(null);
-			const response = await api.get(`/api/chat/chats/${chatId}/messages`);
+			const response = await api.get(`/chat/chats/${chatId}/messages`);
 			if (response.data && response.data.length > 0) {
 				const formattedMessages = response.data.map((msg) => ({
 					sender: msg.sender,
@@ -133,7 +133,7 @@ const TogetherAIChat = ({ setView }) => {
 			setPrompt(""); // Clear input immediately for better UX
 
 			// Send message to server using the configured axios instance
-			const { data } = await api.post("/api/chat/message", {
+			const { data } = await api.post("/chat/message", {
 				prompt,
 				chat_id: chatId,
 				sender: "user",
@@ -211,7 +211,7 @@ const TogetherAIChat = ({ setView }) => {
 	const handleNewChat = async () => {
 		try {
 			setError(null);
-			const response = await api.post("/api/chat", {
+			const response = await api.post("/chat", {
 				chat_name: `New Chat ${new Date().toLocaleString()}`
 			});
 			

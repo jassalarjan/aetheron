@@ -19,7 +19,7 @@ const ImageGenerator = () => {
 
 	const fetchImageHistory = async () => {
 		try {
-			const response = await axios.get("/api/image/history");
+			const response = await axios.get("/image/history");
 			setImageHistory(response.data);
 		} catch (error) {
 			console.error("Error fetching image history:", error);
@@ -29,7 +29,7 @@ const ImageGenerator = () => {
 
 	const fetchOrCreateChat = async () => {
 		try {
-			const response = await axios.get("/api/chat/latest");
+			const response = await axios.get("/chat/latest");
 			setChatId(response.data.chat_id || 1);
 		} catch (error) {
 			console.error("Error fetching chat:", error);
@@ -46,7 +46,7 @@ const ImageGenerator = () => {
 
 		try {
 			const response = await axios.post(
-				"/api/image",
+				"/image",
 				{ prompt, chatId, width, height, n },
 				{
 					headers: { "Content-Type": "application/json" },
@@ -90,7 +90,7 @@ const ImageGenerator = () => {
 
 	const handleViewImage = async (imageId) => {
 		try {
-			const response = await axios.get(`/api/image/${imageId}`);
+			const response = await axios.get(`/image/${imageId}`);
 			const imageUrls = Array.isArray(response.data.imageUrls)
 				? response.data.imageUrls
 				: [response.data.imageUrl];
