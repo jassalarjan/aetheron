@@ -267,13 +267,25 @@ const TogetherAIChat = ({ setView }) => {
 	const handleNewChat = async () => {
 		try {
 			setError(null);
+			// Prompt user for initial message
+			const initialMessage = prompt("Please enter your first message for the new chat:");
+			if (!initialMessage) {
+				setError("A message is required to create a new chat");
+				return;
+			}
+
 			const response = await api.post("/chat", {
-				chat_name: `New Chat ${new Date().toLocaleString()}`
+				chat_name: `New Chat ${new Date().toLocaleString()}`,
+				initial_message: initialMessage
 			});
 			
 			if (response.data.chat_id) {
 				setChatId(response.data.chat_id);
-				setMessages([]);
+				setMessages([{
+					sender: "user",
+					text: initialMessage,
+					timestamp: new Date().toISOString()
+				}]);
 				setPrompt("");
 				await fetchChatHistory();
 			} else {
@@ -281,7 +293,25 @@ const TogetherAIChat = ({ setView }) => {
 			}
 		} catch (error) {
 			console.error("Error creating new chat:", error);
-			setError("Failed to create new chat. Please try again later.");
+			setError(error.response?.data?.details || "Failed to create new chat. Please try again later.");
+		}
+	};
+
+	const handleDeleteChat = async (chatId, event) => {
+		event.stopPropagation(); // Prevent chat selection when clicking delete
+		if (window.confirm("Are you sure you want to delete this chat? This action cannot be undone.")) {
+			try {
+				setError(null);
+				await api.delete(`/chat/${chatId}`);
+				await fetchChatHistory();
+				if (chatId === chatId) {
+					setChatId(null);
+					setMessages([]);
+				}
+			} catch (error) {
+				console.error("Error deleting chat:", error);
+				setError("Failed to delete chat. Please try again later.");
+			}
 		}
 	};
 
@@ -391,7 +421,7 @@ const TogetherAIChat = ({ setView }) => {
 						chatHistory.map((chat) => (
 							<div
 								key={chat.chat_id}
-								className="cursor-pointer hover:bg-indigo-50 py-3 px-4 border-b border-gray-200 transition-colors"
+								className="cursor-pointer hover:bg-indigo-50 py-3 px-4 border-b border-gray-200 transition-colors flex justify-between items-center"
 								onClick={() => handleChatSelect(chat)}
 								role="button"
 								tabIndex={0}
@@ -404,6 +434,15 @@ const TogetherAIChat = ({ setView }) => {
 								<span className="font-medium text-gray-800">
 									{chat.chat_name ? chat.chat_name : `Chat ${chat.chat_id}`}
 								</span>
+								<button
+									onClick={(e) => handleDeleteChat(chat.chat_id, e)}
+									className="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-full transition-colors"
+									aria-label="Delete chat"
+								>
+									<svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+										<path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+									</svg>
+								</button>
 							</div>
 						))
 					) : (
