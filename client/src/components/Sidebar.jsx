@@ -1,58 +1,43 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
-  Home,
-  User,
-  Image,
-  MessageSquare,
-  Cpu,
-  Bot,
-  LogOut,
-  Settings,
-  BookOpen,
-  Mic,
-  ChevronLeft,
-  ChevronRight
+    Home,
+    User,
+    Image,
+    MessageSquare,
+    Cpu,
+    Bot,
+    LogOut,
+    Settings,
+    BookOpen,
+    Mic,
+    ChevronLeft,
+    ChevronRight,
+    X
 } from 'lucide-react';
 
 const Sidebar = ({ 
-    chatHistory = [],
-    selectedChat, 
-    onChatSelect, 
+    isAuthenticated,
+    isMobile,
+    isOpen,
+    onClose,
+    onLogout,
     className = '' 
 }) => {
     const [isCollapsed, setIsCollapsed] = useState(false);
-    const [isMobile, setIsMobile] = useState(false);
-    const [isOpen, setIsOpen] = useState(false);
     const location = useLocation();
 
     useEffect(() => {
-        const checkMobile = () => {
-            setIsMobile(window.innerWidth < 768);
-            if (window.innerWidth >= 768) {
-                setIsOpen(true);
-            }
-        };
-
-        checkMobile();
-        window.addEventListener('resize', checkMobile);
-        return () => window.removeEventListener('resize', checkMobile);
-    }, []);
+        if (isMobile) {
+            setIsCollapsed(false);
+        }
+    }, [isMobile]);
 
     const toggleSidebar = () => {
         if (isMobile) {
-            setIsOpen(!isOpen);
+            onClose();
         } else {
             setIsCollapsed(!isCollapsed);
-        }
-    };
-
-    const handleChatClick = (chat) => {
-        if (onChatSelect) {
-            onChatSelect(chat);
-            if (isMobile) {
-                setIsOpen(false);
-            }
         }
     };
 
@@ -104,15 +89,7 @@ const Sidebar = ({
             active: 'bg-yellow-600', 
             hover: 'hover:bg-yellow-600',
             description: 'User profile settings'
-        },
-        { 
-            path: '/logout', 
-            label: 'Logout', 
-            icon: <LogOut className="w-6 h-6" />, 
-            active: 'bg-red-600', 
-            hover: 'hover:bg-red-600',
-            description: 'Sign out of your account'
-        },
+        }
     ];
 
     return (
@@ -121,18 +98,8 @@ const Sidebar = ({
             {isMobile && isOpen && (
                 <div 
                     className="fixed inset-0 bg-black bg-opacity-50 z-20"
-                    onClick={() => setIsOpen(false)}
+                    onClick={onClose}
                 />
-            )}
-
-            {/* Toggle Button for Mobile */}
-            {isMobile && !isOpen && (
-                <button
-                    onClick={() => setIsOpen(true)}
-                    className="fixed top-4 right-4 z-30 p-2 bg-white rounded-full shadow-lg hover:bg-gray-50 transition-colors"
-                >
-                    <MessageSquare className="w-6 h-6 text-[#5b21b6]" />
-                </button>
             )}
 
             {/* Sidebar */}
@@ -140,20 +107,27 @@ const Sidebar = ({
                 className={`fixed md:relative bg-white shadow-lg transition-all duration-300 z-30 h-full
                     ${isMobile 
                         ? `w-[280px] ${isOpen ? 'translate-x-0' : '-translate-x-full'}`
-                        : `${isCollapsed ? 'w-16' : 'w-80'}`
+                        : `${isCollapsed ? 'w-16' : 'w-64'}`
                     }
                     ${className}`}
             >
                 {/* Header */}
                 <div className="p-4 border-b border-gray-200 flex items-center justify-between">
                     {!isCollapsed && (
-                        <h3 className="text-lg font-semibold text-gray-800">Chat History</h3>
+                        <div className="flex items-center space-x-3">
+                            <div className="w-10 h-10 bg-indigo-500 rounded-lg flex items-center justify-center">
+                                <Bot className="w-6 h-6 text-white" />
+                            </div>
+                            <span className="text-xl font-bold text-gray-800">Aetheron</span>
+                        </div>
                     )}
                     <button 
                         onClick={toggleSidebar}
                         className="p-2 hover:bg-gray-100 rounded-full transition-colors"
                     >
-                        {isCollapsed ? (
+                        {isMobile ? (
+                            <X className="w-5 h-5 text-gray-500" />
+                        ) : isCollapsed ? (
                             <ChevronRight className="w-5 h-5 text-gray-500" />
                         ) : (
                             <ChevronLeft className="w-5 h-5 text-gray-500" />
@@ -162,7 +136,7 @@ const Sidebar = ({
                 </div>
 
                 {/* Navigation Links */}
-                <nav className="p-4 border-b border-gray-200">
+                <nav className="p-4">
                     <ul className="space-y-2">
                         {linkItems.map((item, idx) => {
                             const isActive = location.pathname === item.path;
@@ -174,6 +148,7 @@ const Sidebar = ({
                                             ${isActive ? item.active : item.hover}
                                             ${isCollapsed ? 'justify-center' : ''}`}
                                         title={item.description}
+                                        onClick={isMobile ? onClose : undefined}
                                     >
                                         <span className={`${isActive ? 'text-white' : 'text-gray-400'}`}>
                                             {item.icon}
@@ -190,36 +165,24 @@ const Sidebar = ({
                     </ul>
                 </nav>
 
-                {/* Chat List */}
-                <div className="overflow-y-auto h-[calc(100vh-280px)]">
-                    {Array.isArray(chatHistory) && chatHistory.length > 0 ? (
-                        chatHistory.map((chat) => (
-                            <div
-                                key={chat.chat_id}
-                                onClick={() => handleChatClick(chat)}
-                                className={`p-4 border-b border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors
-                                    ${selectedChat?.chat_id === chat.chat_id ? 'bg-purple-50' : ''}
-                                    ${isCollapsed ? 'flex justify-center' : ''}`}
-                            >
-                                {isCollapsed ? (
-                                    <MessageSquare className="w-5 h-5 text-[#5b21b6]" />
-                                ) : (
-                                    <div className="flex items-center justify-between">
-                                        <span className="font-medium text-gray-800 truncate max-w-[180px]">
-                                            {chat.name || `Chat ${chat.chat_id}`}
-                                        </span>
-                                        <span className="text-sm text-gray-500 whitespace-nowrap ml-2">
-                                            {new Date(chat.created_at).toLocaleDateString()}
-                                        </span>
-                                    </div>
-                                )}
-                            </div>
-                        ))
-                    ) : (
-                        <div className="p-4 text-center text-gray-500">
-                            No chat history available
-                        </div>
-                    )}
+                {/* User Section */}
+                <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200">
+                    <button
+                        onClick={() => {
+                            onLogout();
+                            if (isMobile) onClose();
+                        }}
+                        className={`flex items-center gap-4 px-4 py-3 rounded-lg transition-all duration-200 w-full
+                            bg-red-600 hover:bg-red-700
+                            ${isCollapsed ? 'justify-center' : ''}`}
+                    >
+                        <LogOut className="w-6 h-6 text-white" />
+                        {!isCollapsed && (
+                            <span className="text-sm font-medium text-white">
+                                Logout
+                            </span>
+                        )}
+                    </button>
                 </div>
             </div>
         </>
