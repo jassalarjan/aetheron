@@ -135,6 +135,7 @@ function HomePage() {
 			<div className="max-w-7xl mx-auto">
 				{/* Header Section */}
 				<div className="text-center mb-6 sm:mb-12">
+					<img src="./src/assets/images/logo.png" alt="Aetheron Logo" className="w-16 h-16 mx-auto mb-4" />
 					<h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold mb-2 sm:mb-4 bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-blue-500">
 						Welcome to Aetheron
 					</h1>
