@@ -104,7 +104,7 @@ const Sidebar = ({
 
             {/* Sidebar */}
             <div
-                className={`fixed top-0 left-0 z-30 bg-white shadow-lg transition-transform duration-300 ease-in-out h-full
+                className={`fixed top-0 left-0 z-30  shadow-lg transition-transform duration-300 ease-in-out h-full
                     ${isMobile
                         ? `w-[80vw] max-w-sm ${isOpen ? 'translate-x-0' : '-translate-x-full'}`
                         : `${isCollapsed ? 'w-16' : 'w-64'}`
