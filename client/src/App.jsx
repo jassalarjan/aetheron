@@ -113,7 +113,7 @@ function App() {
 					{/* Main Layout */}
 					<div className={`flex min-h-screen ${isMobile ? 'pt-16' : ''}`}>
 						{/* Sidebar */}
-						<div className={`${isMobile ? 'fixed inset-0 z-30' : 'relative'}`}>
+						<div className={`${isMobile ? 'fixed  z-30' : 'relative'}`}>
 							<Sidebar
 								isAuthenticated={isAuthenticated}
 								isMobile={isMobile}
