@@ -242,7 +242,7 @@ function HomePage() {
 				<footer className="mt-8 sm:mt-12 md:mt-16 text-center">
 					<div className="text-xs sm:text-sm text-gray-400">
 						<p>&copy; {new Date().getFullYear()} Aetheron AI Platform</p>
-						<p className="mt-1 sm:mt-2">Powered by advanced AI technology</p>
+						<p className="mt-1 sm:mt-2">Developed by Arjan Singh Jassal</p>
 					</div>
 				</footer>
 			</div>
