@@ -315,14 +315,13 @@ router.get("/chats/:chatId/messages", (req, res) => {
 				return res.status(403).json({ error: "Access denied to this chat" });
 			}
 
-			// If chat belongs to user, fetch messages with all fields
+			// Use a simpler query that doesn't join tables to avoid column conflicts
 			db.all(
-				`SELECT m.*, c.*
-                 FROM messages m
-                 JOIN chats c ON m.chat_id = c.chat_id
-                 WHERE m.chat_id = ? AND c.user_id = ?
-                 ORDER BY m.timestamp ASC`,
-				[chatId, userId],
+				`SELECT id, chat_id, sender, message, response, timestamp, generation_type
+                 FROM messages
+                 WHERE chat_id = ?
+                 ORDER BY timestamp ASC`,
+				[chatId],
 				(err, rows) => {
 					if (err) {
 						console.error("Error fetching messages:", err);

@@ -78,6 +78,16 @@ api.interceptors.response.use(
         if (error.response?.status === 500) {
             console.error('Server error (500) detected:', error.response?.data);
             
+            // Add more detailed logging for debugging
+            console.error('Error details:', {
+                url: error.config?.url,
+                method: error.config?.method,
+                request: error.request,
+                responseData: error.response?.data,
+                responseStatus: error.response?.status,
+                responseHeaders: error.response?.headers
+            });
+            
             // Check if error is related to Together AI API
             if (error.config?.url?.includes('/chat/message') || 
                 error.config?.url?.includes('/image')) {

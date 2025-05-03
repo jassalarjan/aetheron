@@ -98,7 +98,24 @@ const TogetherAIChat = ({ setView }) => {
 			}
 		} catch (error) {
 			console.error("Error fetching chat messages:", error);
-			setError("Failed to load messages. Please try again later.");
+			let errorMessage = "Failed to load messages. Please try again later.";
+			
+			// Add more detailed error logging
+			if (error.response) {
+				// The request was made and the server responded with a status code outside the 2xx range
+				console.error("Response error data:", error.response.data);
+				console.error("Response error status:", error.response.status);
+				errorMessage = error.response.data?.error || errorMessage;
+			} else if (error.request) {
+				// The request was made but no response was received
+				console.error("No response received:", error.request);
+				errorMessage = "Server did not respond. Please check your connection.";
+			} else {
+				// Something happened in setting up the request that triggered an Error
+				console.error("Request error:", error.message);
+			}
+			
+			setError(errorMessage);
 			setMessages([]);
 		}
 	};
