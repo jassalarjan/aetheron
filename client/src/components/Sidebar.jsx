@@ -12,7 +12,7 @@ import {
   BookOpen,
   Mic
 } from 'lucide-react';
-
+import logo from '../assets/images/2.png';
 const Sidebar = ({ setSidebarHovered, isAuthenticated }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -105,7 +105,7 @@ const Sidebar = ({ setSidebarHovered, isAuthenticated }) => {
       <div className="p-4 border-b border-gray-700">
         <div className="flex items-center space-x-3">
           <div className="w-10 h-10 bg-indigo-500 rounded-lg flex items-center justify-center">
-            <img src="./assets/images/2.png" alt="Aetheron Logo" className="w-10 h-10" />
+            <img src={logo} alt="Aetheron Logo" className="w-10 h-10" />
           </div>
           {(isHovered || isMobile) && (
             <span className="text-xl font-bold text-white">Aetheron</span>

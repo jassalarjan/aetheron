@@ -7,6 +7,7 @@ import BackgroundEffects from './components/documentation/BackgroundEffects';
 import { motion } from 'framer-motion';
 import MobileNavigation from './components/documentation/MobileNavigation';
 import './documentation.css';
+import logo from './assets/images/logo.png';
 
 function Documentation() {
   const [activeSection, setActiveSection] = useState('overview');
@@ -46,7 +47,7 @@ function Documentation() {
         toggleTheme={toggleTheme} 
         toggleMobileMenu={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
       />
-      <img src="./assets/images/logo.png" alt="Aetheron Logo" className="w-16 h-16 mx-auto mb-4" />
+      <img src={logo} alt="Aetheron Logo" className="w-16 h-16 mx-auto mb-4" />
       <div className="flex relative container mx-auto px-4 pt-20 pb-12">
         <Sidebar 
           activeSection={activeSection} 
