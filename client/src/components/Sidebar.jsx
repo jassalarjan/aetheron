@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 
 const Sidebar = ({ 
-    chatHistory, 
+    chatHistory = [],
     selectedChat, 
     onChatSelect, 
     className = '' 
@@ -48,9 +48,11 @@ const Sidebar = ({
     };
 
     const handleChatClick = (chat) => {
-        onChatSelect(chat);
-        if (isMobile) {
-            setIsOpen(false);
+        if (onChatSelect) {
+            onChatSelect(chat);
+            if (isMobile) {
+                setIsOpen(false);
+            }
         }
     };
 
@@ -159,30 +161,65 @@ const Sidebar = ({
                     </button>
                 </div>
 
+                {/* Navigation Links */}
+                <nav className="p-4 border-b border-gray-200">
+                    <ul className="space-y-2">
+                        {linkItems.map((item, idx) => {
+                            const isActive = location.pathname === item.path;
+                            return (
+                                <li key={idx}>
+                                    <Link
+                                        to={item.path}
+                                        className={`flex items-center gap-4 px-4 py-3 rounded-lg transition-all duration-200
+                                            ${isActive ? item.active : item.hover}
+                                            ${isCollapsed ? 'justify-center' : ''}`}
+                                        title={item.description}
+                                    >
+                                        <span className={`${isActive ? 'text-white' : 'text-gray-400'}`}>
+                                            {item.icon}
+                                        </span>
+                                        {!isCollapsed && (
+                                            <span className="text-sm font-medium text-white">
+                                                {item.label}
+                                            </span>
+                                        )}
+                                    </Link>
+                                </li>
+                            );
+                        })}
+                    </ul>
+                </nav>
+
                 {/* Chat List */}
-                <div className="overflow-y-auto h-[calc(100vh-64px)]">
-                    {chatHistory.map((chat) => (
-                        <div
-                            key={chat.chat_id}
-                            onClick={() => handleChatClick(chat)}
-                            className={`p-4 border-b border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors
-                                ${selectedChat?.chat_id === chat.chat_id ? 'bg-purple-50' : ''}
-                                ${isCollapsed ? 'flex justify-center' : ''}`}
-                        >
-                            {isCollapsed ? (
-                                <MessageSquare className="w-5 h-5 text-[#5b21b6]" />
-                            ) : (
-                                <div className="flex items-center justify-between">
-                                    <span className="font-medium text-gray-800 truncate max-w-[180px]">
-                                        {chat.name || `Chat ${chat.chat_id}`}
-                                    </span>
-                                    <span className="text-sm text-gray-500 whitespace-nowrap ml-2">
-                                        {new Date(chat.created_at).toLocaleDateString()}
-                                    </span>
-                                </div>
-                            )}
+                <div className="overflow-y-auto h-[calc(100vh-280px)]">
+                    {Array.isArray(chatHistory) && chatHistory.length > 0 ? (
+                        chatHistory.map((chat) => (
+                            <div
+                                key={chat.chat_id}
+                                onClick={() => handleChatClick(chat)}
+                                className={`p-4 border-b border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors
+                                    ${selectedChat?.chat_id === chat.chat_id ? 'bg-purple-50' : ''}
+                                    ${isCollapsed ? 'flex justify-center' : ''}`}
+                            >
+                                {isCollapsed ? (
+                                    <MessageSquare className="w-5 h-5 text-[#5b21b6]" />
+                                ) : (
+                                    <div className="flex items-center justify-between">
+                                        <span className="font-medium text-gray-800 truncate max-w-[180px]">
+                                            {chat.name || `Chat ${chat.chat_id}`}
+                                        </span>
+                                        <span className="text-sm text-gray-500 whitespace-nowrap ml-2">
+                                            {new Date(chat.created_at).toLocaleDateString()}
+                                        </span>
+                                    </div>
+                                )}
+                            </div>
+                        ))
+                    ) : (
+                        <div className="p-4 text-center text-gray-500">
+                            No chat history available
                         </div>
-                    ))}
+                    )}
                 </div>
             </div>
         </>

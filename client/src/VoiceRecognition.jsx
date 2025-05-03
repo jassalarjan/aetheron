@@ -13,6 +13,7 @@ const VoiceRecognition = () => {
 	const [chatHistory, setChatHistory] = useState([]);
 	const [selectedChat, setSelectedChat] = useState(null);
 	const [showHistory, setShowHistory] = useState(false);
+	const [isHistoryLoading, setIsHistoryLoading] = useState(true);
 
 	const recognitionRef = useRef(null);
 	const synthRef = useRef(window.speechSynthesis);
@@ -56,12 +57,18 @@ const VoiceRecognition = () => {
 
 	const fetchChatHistory = async () => {
 		try {
+			setIsHistoryLoading(true);
 			const response = await api.get("/nlp/chat-history");
-			if (response.data.chats) {
+			if (response.data && response.data.chats) {
 				setChatHistory(response.data.chats);
+			} else {
+				setChatHistory([]);
 			}
 		} catch (error) {
 			console.error("Error fetching chat history:", error);
+			setChatHistory([]);
+		} finally {
+			setIsHistoryLoading(false);
 		}
 	};
 
@@ -189,6 +196,7 @@ const VoiceRecognition = () => {
 		setSelectedChat(chat);
 		setShowHistory(false);
 		try {
+			setIsLoading(true);
 			const response = await api.get(`/nlp/${chat.chat_id}/messages`);
 			if (response.data.messages) {
 				setMessages(response.data.messages.map(msg => ({
@@ -199,6 +207,8 @@ const VoiceRecognition = () => {
 			}
 		} catch (error) {
 			console.error("Error loading chat messages:", error);
+		} finally {
+			setIsLoading(false);
 		}
 	};
 
@@ -212,6 +222,7 @@ const VoiceRecognition = () => {
 				chatHistory={chatHistory}
 				selectedChat={selectedChat}
 				onChatSelect={handleChatSelect}
+				isLoading={isHistoryLoading}
 			/>
 
 			{/* Mobile Overlay */}
