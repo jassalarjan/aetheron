@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import api from "./api/axios";
 import { Mic, MicOff, Volume2, VolumeX, MessageSquare, Clock } from "lucide-react";
-import Sidebar from "./components/Sidebar";
 
 const VoiceRecognition = () => {
 	const [chatId, setChatId] = useState(null);
@@ -13,7 +12,6 @@ const VoiceRecognition = () => {
 	const [chatHistory, setChatHistory] = useState([]);
 	const [selectedChat, setSelectedChat] = useState(null);
 	const [showHistory, setShowHistory] = useState(false);
-	const [isHistoryLoading, setIsHistoryLoading] = useState(true);
 
 	const recognitionRef = useRef(null);
 	const synthRef = useRef(window.speechSynthesis);
@@ -57,18 +55,12 @@ const VoiceRecognition = () => {
 
 	const fetchChatHistory = async () => {
 		try {
-			setIsHistoryLoading(true);
 			const response = await api.get("/nlp/chat-history");
-			if (response.data && response.data.chats) {
+			if (response.data.chats) {
 				setChatHistory(response.data.chats);
-			} else {
-				setChatHistory([]);
 			}
 		} catch (error) {
 			console.error("Error fetching chat history:", error);
-			setChatHistory([]);
-		} finally {
-			setIsHistoryLoading(false);
 		}
 	};
 
@@ -196,7 +188,6 @@ const VoiceRecognition = () => {
 		setSelectedChat(chat);
 		setShowHistory(false);
 		try {
-			setIsLoading(true);
 			const response = await api.get(`/nlp/${chat.chat_id}/messages`);
 			if (response.data.messages) {
 				setMessages(response.data.messages.map(msg => ({
@@ -207,8 +198,6 @@ const VoiceRecognition = () => {
 			}
 		} catch (error) {
 			console.error("Error loading chat messages:", error);
-		} finally {
-			setIsLoading(false);
 		}
 	};
 
@@ -218,29 +207,41 @@ const VoiceRecognition = () => {
 
 	return (
 		<div className="min-h-screen bg-[#e9d5ff] text-gray-800 flex">
-			<Sidebar
-				chatHistory={chatHistory}
-				selectedChat={selectedChat}
-				onChatSelect={handleChatSelect}
-				isLoading={isHistoryLoading}
-			/>
-
-			{/* Mobile Overlay */}
-			{showHistory && (
-				<div 
-					className="fixed inset-0 bg-black bg-opacity-50 z-20 md:hidden"
-					onClick={() => setShowHistory(false)}
-				/>
-			)}
+			{/* Chat History Sidebar */}
+			<div className={`w-80 bg-white shadow-lg transition-all duration-300 ${showHistory ? 'translate-x-0' : '-translate-x-full'} fixed h-full z-10`}>
+				<div className="p-4 border-b border-gray-200">
+					<h3 className="text-lg font-semibold text-gray-800">Chat History</h3>
+				</div>
+				<div className="overflow-y-auto h-[calc(100vh-64px)]">
+					{chatHistory.map((chat) => (
+						<div
+							key={chat.chat_id}
+							onClick={() => handleChatSelect(chat)}
+							className={`p-4 border-b border-gray-200 cursor-pointer hover:bg-gray-50 ${
+								selectedChat?.chat_id === chat.chat_id ? 'bg-purple-50' : ''
+							}`}
+						>
+							<div className="flex items-center justify-between">
+								<span className="font-medium text-gray-800">
+									{chat.name || `Chat ${chat.chat_id}`}
+								</span>
+								<span className="text-sm text-gray-500">
+									{new Date(chat.created_at).toLocaleDateString()}
+								</span>
+							</div>
+						</div>
+					))}
+				</div>
+			</div>
 
 			{/* Main Chat Area */}
 			<div className="flex-1 flex flex-col items-center py-10 px-4">
 				<div className="w-full max-w-4xl">
 					<div className="flex items-center justify-between mb-6">
-						<h2 className="text-2xl md:text-3xl font-bold text-[#5b21b6] tracking-wide">🎤 Aetheron Voice AI</h2>
+						<h2 className="text-3xl font-bold text-[#5b21b6] tracking-wide">🎤 Aetheron Voice AI</h2>
 						<button
 							onClick={() => setShowHistory(!showHistory)}
-							className="p-2 rounded-lg hover:bg-purple-100 transition-colors md:hidden"
+							className="p-2 rounded-lg hover:bg-purple-100 transition-colors"
 						>
 							<MessageSquare className="w-6 h-6 text-[#5b21b6]" />
 						</button>
@@ -248,7 +249,7 @@ const VoiceRecognition = () => {
 
 					<div 
 						ref={chatBoxRef}
-						className="w-full bg-gradient-to-br from-[#f5f3ff] to-[#ede9fe] rounded-xl shadow-lg p-4 md:p-6 mb-6 overflow-y-auto h-[calc(100vh-280px)] md:h-[500px] space-y-4"
+						className="w-full bg-gradient-to-br from-[#f5f3ff] to-[#ede9fe] rounded-xl shadow-lg p-6 mb-6 overflow-y-auto h-[500px] space-y-4"
 					>
 						{isLoading && (
 							<div className="flex justify-center items-center h-full">
