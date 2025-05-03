@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "./api/axios";
-import logo from './assets/images/logo.png';
+import logo from './assets/images/2.png';
 import { 
 	MessageSquare, 
 	Mic, 
@@ -136,7 +136,7 @@ function HomePage() {
 			<div className="max-w-7xl mx-auto">
 				{/* Header Section */}
 				<div className="text-center mb-6 sm:mb-12">
-					<img src={logo} alt="Aetheron Logo" className="w-16 h-16 mx-auto mb-4" />
+					<img src={logo} alt="Aetheron Logo" className="w-20 h-20 mx-auto mb-4" />
 					<h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold mb-2 sm:mb-4 bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-blue-500">
 						Welcome to Aetheron
 					</h1>
