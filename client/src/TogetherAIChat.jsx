@@ -85,15 +85,31 @@ const TogetherAIChat = ({ setView }) => {
 		try {
 			setError(null);
 			const response = await api.get(`/chat/chats/${chatId}/messages`);
-			if (response.data && response.data.length > 0) {
-				const formattedMessages = response.data.map((msg) => ({
-					sender: msg.sender,
-					text: msg.message || msg.response,
-					timestamp: msg.timestamp || new Date().toISOString(),
-					status: 'sent'
-				}));
+			
+			// Check if we got an array of messages
+			if (Array.isArray(response.data) && response.data.length > 0) {
+				const formattedMessages = response.data.map((msg) => {
+					// Handle both "message" and "response" fields
+					const textContent = msg.message || msg.response || '';
+					
+					// Determine status based on generation_type
+					let status = 'sent';
+					if (msg.generation_type === 'error') {
+						status = 'error';
+					}
+					
+					return {
+						sender: msg.sender,
+						text: textContent,
+						timestamp: msg.timestamp || new Date().toISOString(),
+						status: status,
+						// If it's an error message, make it retryable
+						retryable: status === 'error'
+					};
+				});
 				setMessages(formattedMessages);
 			} else {
+				// Empty array response is valid
 				setMessages([]);
 			}
 		} catch (error) {
@@ -154,7 +170,7 @@ const TogetherAIChat = ({ setView }) => {
 			setPrompt(""); // Clear input immediately for better UX
 			setRetryingMessage(null); // Clear retry state
 
-			// Send message to server using the configured axios instance
+			// Send message to server using the new message endpoint
 			const { data } = await api.post("/chat/message", {
 				prompt: messageText,
 				chat_id: chatId,
@@ -202,8 +218,9 @@ const TogetherAIChat = ({ setView }) => {
 					errorData?.details?.includes('overloaded')) {
 					errorMessage = "The AI service is currently experiencing high demand. Please try again in a moment.";
 					retryable = true;
-				} else if (errorData?.error?.includes('AI service') || errorData?.error?.includes('Together AI')) {
-					errorMessage = "There was an issue connecting to the AI service. Please try again.";
+				} else if (errorData?.details?.includes('API Error') || 
+					errorData?.error?.includes('AI response')) {
+					errorMessage = "There was an issue with the AI service. Please try again.";
 					retryable = true;
 				} else {
 					errorMessage = errorData?.error || "A server error occurred. Our team has been notified.";
