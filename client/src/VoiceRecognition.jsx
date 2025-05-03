@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import api from "./api/axios";
+import { Mic, MicOff, Volume2, VolumeX, MessageSquare, Clock } from "lucide-react";
 
 const VoiceRecognition = () => {
 	const [chatId, setChatId] = useState(null);
@@ -8,9 +9,13 @@ const VoiceRecognition = () => {
 	const [aiSpeaking, setAiSpeaking] = useState(false);
 	const [controlsVisible, setControlsVisible] = useState(false);
 	const [isLoading, setIsLoading] = useState(false);
+	const [chatHistory, setChatHistory] = useState([]);
+	const [selectedChat, setSelectedChat] = useState(null);
+	const [showHistory, setShowHistory] = useState(false);
 
 	const recognitionRef = useRef(null);
 	const synthRef = useRef(window.speechSynthesis);
+	const chatBoxRef = useRef(null);
 
 	useEffect(() => {
 		const token = localStorage.getItem("authToken");
@@ -39,26 +44,43 @@ const VoiceRecognition = () => {
 		};
 
 		initializeChat();
+		fetchChatHistory();
 	}, []);
+
+	useEffect(() => {
+		if (chatBoxRef.current) {
+			chatBoxRef.current.scrollTop = chatBoxRef.current.scrollHeight;
+		}
+	}, [messages]);
+
+	const fetchChatHistory = async () => {
+		try {
+			const response = await api.get("/nlp/chat-history");
+			if (response.data.chats) {
+				setChatHistory(response.data.chats);
+			}
+		} catch (error) {
+			console.error("Error fetching chat history:", error);
+		}
+	};
 
 	const initializeChat = async () => {
 		try {
 			setIsLoading(true);
-			// Get or create a new NLP chat
 			const response = await api.get("/nlp/latest-chat");
 			const newChatId = response.data.chat_id;
 			setChatId(newChatId);
 
-			// Try to fetch message history
 			try {
 				const historyRes = await api.get(`/nlp/${newChatId}/messages`);
 				if (historyRes.data.messages && historyRes.data.messages.length > 0) {
 					setMessages(historyRes.data.messages.map(msg => ({
 						sender: msg.response ? "ai" : "user",
-						text: msg.response || msg.message
+						text: msg.response || msg.message,
+						timestamp: msg.timestamp || new Date().toISOString()
 					})));
 				} else {
-					setMessages([]); // Start with empty messages if no history
+					setMessages([]);
 				}
 			} catch (error) {
 				console.log("No previous messages found, starting fresh");
@@ -73,11 +95,19 @@ const VoiceRecognition = () => {
 	};
 
 	const addUserMessage = (text) => {
-		setMessages((prev) => [...prev, { sender: "user", text }]);
+		setMessages((prev) => [...prev, { 
+			sender: "user", 
+			text,
+			timestamp: new Date().toISOString()
+		}]);
 	};
 
 	const addAIMessage = (text) => {
-		setMessages((prev) => [...prev, { sender: "ai", text }]);
+		setMessages((prev) => [...prev, { 
+			sender: "ai", 
+			text,
+			timestamp: new Date().toISOString()
+		}]);
 	};
 
 	const sendToAI = async (text) => {
@@ -85,7 +115,6 @@ const VoiceRecognition = () => {
 			setIsLoading(true);
 			console.log("Sending message to AI:", { text, chatId });
 			
-			// If we don't have a chatId, get one first
 			let currentChatId = chatId;
 			if (!currentChatId) {
 				try {
@@ -114,7 +143,6 @@ const VoiceRecognition = () => {
 			}
 		} catch (error) {
 			console.error("AI response error:", error);
-			// Log more detailed error information
 			if (error.response) {
 				console.error("Error response data:", error.response.data);
 				console.error("Error response status:", error.response.status);
@@ -132,7 +160,7 @@ const VoiceRecognition = () => {
 		utterance.lang = "en-US";
 		utterance.onstart = () => {
 			setAiSpeaking(true);
-			setControlsVisible(false);
+			setControlsVisible(true);
 		};
 		utterance.onend = () => {
 			setAiSpeaking(false);
@@ -156,59 +184,146 @@ const VoiceRecognition = () => {
 		setControlsVisible(true);
 	};
 
-	return (
-		<div className="min-h-screen bg-[#e9d5ff] text-gray-800 flex flex-col items-center py-10 px-4">
-			<h2 className="text-3xl font-bold mb-6 text-[#5b21b6] tracking-wide">🎤 Aetheron Voice AI</h2>
+	const handleChatSelect = async (chat) => {
+		setSelectedChat(chat);
+		setShowHistory(false);
+		try {
+			const response = await api.get(`/nlp/${chat.chat_id}/messages`);
+			if (response.data.messages) {
+				setMessages(response.data.messages.map(msg => ({
+					sender: msg.response ? "ai" : "user",
+					text: msg.response || msg.message,
+					timestamp: msg.timestamp || new Date().toISOString()
+				})));
+			}
+		} catch (error) {
+			console.error("Error loading chat messages:", error);
+		}
+	};
 
-			<div className="w-full max-w-3xl bg-gradient-to-br from-[#f5f3ff] to-[#ede9fe] rounded-xl shadow-lg p-6 mb-6 overflow-y-auto h-[400px] space-y-4">
-				{isLoading && (
-					<div className="flex justify-center items-center h-full">
-						<div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#7c3aed]"></div>
-					</div>
-				)}
-				{messages.map((msg, i) => (
-					<div
-						key={i}
-						className={`px-4 py-2 rounded-xl max-w-[75%] text-sm ${
-							msg.sender === "user"
-								? "bg-[#7e22ce] text-white self-end ml-auto"
-								: "bg-[#d8b4fe] text-gray-900"
-						}`}
-					>
-						{msg.text}
-					</div>
-				))}
+	const formatTimestamp = (timestamp) => {
+		return new Date(timestamp).toLocaleTimeString();
+	};
+
+	return (
+		<div className="min-h-screen bg-[#e9d5ff] text-gray-800 flex">
+			{/* Chat History Sidebar */}
+			<div className={`w-80 bg-white shadow-lg transition-all duration-300 ${showHistory ? 'translate-x-0' : '-translate-x-full'} fixed h-full z-10`}>
+				<div className="p-4 border-b border-gray-200">
+					<h3 className="text-lg font-semibold text-gray-800">Chat History</h3>
+				</div>
+				<div className="overflow-y-auto h-[calc(100vh-64px)]">
+					{chatHistory.map((chat) => (
+						<div
+							key={chat.chat_id}
+							onClick={() => handleChatSelect(chat)}
+							className={`p-4 border-b border-gray-200 cursor-pointer hover:bg-gray-50 ${
+								selectedChat?.chat_id === chat.chat_id ? 'bg-purple-50' : ''
+							}`}
+						>
+							<div className="flex items-center justify-between">
+								<span className="font-medium text-gray-800">
+									{chat.name || `Chat ${chat.chat_id}`}
+								</span>
+								<span className="text-sm text-gray-500">
+									{new Date(chat.created_at).toLocaleDateString()}
+								</span>
+							</div>
+						</div>
+					))}
+				</div>
 			</div>
 
-			<div className="flex flex-col items-center space-y-4">
-				{isListening && <p className="text-green-500 animate-pulse">🎧 Listening...</p>}
-				{aiSpeaking && <p className="text-yellow-500 animate-pulse">🗣️ Speaking...</p>}
-
-				{!isListening && !aiSpeaking && !controlsVisible && !isLoading && (
-					<button
-						className="bg-[#7c3aed] hover:bg-[#6b21a8] text-white px-6 py-3 rounded-lg transition-all shadow-md"
-						onClick={startListening}
-					>
-						🎙️ Start Listening
-					</button>
-				)}
-
-				{controlsVisible && !isLoading && (
-					<div className="flex space-x-4">
+			{/* Main Chat Area */}
+			<div className="flex-1 flex flex-col items-center py-10 px-4">
+				<div className="w-full max-w-4xl">
+					<div className="flex items-center justify-between mb-6">
+						<h2 className="text-3xl font-bold text-[#5b21b6] tracking-wide">🎤 Aetheron Voice AI</h2>
 						<button
-							className="bg-[#7c3aed] hover:bg-[#6b21a8] text-white px-5 py-2 rounded-md transition-all shadow"
-							onClick={startListening}
+							onClick={() => setShowHistory(!showHistory)}
+							className="p-2 rounded-lg hover:bg-purple-100 transition-colors"
 						>
-							🎙️ Speak Again
-						</button>
-						<button
-							className="bg-[#dc2626] hover:bg-[#b91c1c] text-white px-5 py-2 rounded-md transition-all shadow"
-							onClick={stopSpeaking}
-						>
-							🛑 Stop
+							<MessageSquare className="w-6 h-6 text-[#5b21b6]" />
 						</button>
 					</div>
-				)}
+
+					<div 
+						ref={chatBoxRef}
+						className="w-full bg-gradient-to-br from-[#f5f3ff] to-[#ede9fe] rounded-xl shadow-lg p-6 mb-6 overflow-y-auto h-[500px] space-y-4"
+					>
+						{isLoading && (
+							<div className="flex justify-center items-center h-full">
+								<div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#7c3aed]"></div>
+							</div>
+						)}
+						{messages.map((msg, i) => (
+							<div
+								key={i}
+								className={`flex flex-col ${
+									msg.sender === "user" ? "items-end" : "items-start"
+								}`}
+							>
+								<div
+									className={`px-4 py-2 rounded-xl max-w-[75%] text-sm ${
+										msg.sender === "user"
+											? "bg-[#7e22ce] text-white"
+											: "bg-[#d8b4fe] text-gray-900"
+									}`}
+								>
+									{msg.text}
+								</div>
+								<span className="text-xs text-gray-500 mt-1 flex items-center">
+									<Clock className="w-3 h-3 mr-1" />
+									{formatTimestamp(msg.timestamp)}
+								</span>
+							</div>
+						))}
+					</div>
+
+					<div className="flex flex-col items-center space-y-4">
+						{isListening && (
+							<div className="flex items-center text-green-500 animate-pulse">
+								<Mic className="w-5 h-5 mr-2" />
+								<span>Listening...</span>
+							</div>
+						)}
+						{aiSpeaking && (
+							<div className="flex items-center text-yellow-500 animate-pulse">
+								<Volume2 className="w-5 h-5 mr-2" />
+								<span>Speaking...</span>
+							</div>
+						)}
+
+						{!isListening && !aiSpeaking && !controlsVisible && !isLoading && (
+							<button
+								className="bg-[#7c3aed] hover:bg-[#6b21a8] text-white px-6 py-3 rounded-lg transition-all shadow-md flex items-center"
+								onClick={startListening}
+							>
+								<Mic className="w-5 h-5 mr-2" />
+								Start Listening
+							</button>
+						)}
+
+						{controlsVisible && !isLoading && (
+							<div className="flex space-x-4">
+								<button
+									className="bg-[#7c3aed] hover:bg-[#6b21a8] text-white px-5 py-2 rounded-md transition-all shadow flex items-center"
+									onClick={startListening}
+								>
+									<Mic className="w-5 h-5 mr-2" />
+									Speak Again
+								</button>
+								<button
+									className="bg-[#dc2626] hover:bg-[#b91c1c] text-white px-5 py-2 rounded-md transition-all shadow flex items-center"
+									onClick={stopSpeaking}
+								>
+									<VolumeX className="w-5 h-5 mr-2" />
+									Stop
+								</button>
+							</div>
+						)}
+					</div>
+				</div>
 			</div>
 		</div>
 	);
