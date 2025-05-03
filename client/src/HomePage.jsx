@@ -31,7 +31,7 @@ function HomePage() {
 	const fetchStats = async () => {
 		try {
 			setStats(prev => ({ ...prev, isLoading: true }));
-			const response = await axios.get('/user/stats');
+			const response = await axios.get('/api/user/stats');
 			console.log('Stats response:', response.data);
 			setStats({
 				...response.data,

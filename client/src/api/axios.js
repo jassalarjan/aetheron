@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-// Use a more flexible base URL without the /api suffix
+// Always use production URL
 const baseURL = 'https://aetheron-worker.jassalarjansingh.workers.dev';
 console.log('Creating axios instance with baseURL:', baseURL);
 
@@ -10,7 +10,11 @@ const api = axios.create({
         'Content-Type': 'application/json'
     },
     withCredentials: true,
-    timeout: 30000 // 30 second timeout for long operations
+    timeout: 30000, // 30 second timeout for long operations
+    // Add CORS settings
+    validateStatus: function (status) {
+        return status >= 200 && status < 500; // Accept all responses to handle them properly
+    }
 });
 
 // Add request interceptor to include auth token
@@ -18,7 +22,7 @@ api.interceptors.request.use((config) => {
     console.log(`Making API request to: ${config.method?.toUpperCase() || 'GET'} ${config.url}`);
     
     // Add /api prefix if not already present and not requesting a root endpoint
-    if (config.url && !config.url.startsWith('/api') && !config.url.startsWith('/user') && config.url !== '/') {
+    if (config.url && !config.url.startsWith('/api') && config.url !== '/') {
         config.url = `/api${config.url}`;
         console.log(`Adjusted URL with /api prefix: ${config.url}`);
     }
