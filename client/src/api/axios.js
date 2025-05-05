@@ -10,7 +10,7 @@ const api = axios.create({
         'Content-Type': 'application/json'
     },
     withCredentials: true,
-    timeout: 30000, // 30 second timeout for long operations
+    timeout: 10000, // Reduced timeout to 10 seconds for better UX
     // Add CORS settings
     validateStatus: function (status) {
         return status >= 200 && status < 500; // Accept all responses to handle them properly
@@ -27,18 +27,9 @@ api.interceptors.request.use((config) => {
         console.log(`Adjusted URL with /api prefix: ${config.url}`);
     }
     
-    console.log('Request config:', { 
-        baseURL: config.baseURL,
-        url: config.url, 
-        method: config.method,
-        headers: config.headers,
-        withCredentials: config.withCredentials
-    });
-    
     const token = localStorage.getItem('authToken');
     if (token) {
         config.headers.Authorization = `Bearer ${token}`;
-        console.log('Added authorization token to request');
     }
     
     return config;
@@ -50,83 +41,17 @@ api.interceptors.request.use((config) => {
 // Add response interceptor to handle common errors
 api.interceptors.response.use(
     (response) => {
-        console.log(`Response received from: ${response.config.method?.toUpperCase() || 'GET'} ${response.config.url}`, {
-            status: response.status,
-            statusText: response.statusText
-        });
         return response;
     },
     (error) => {
-        console.error('Response error:', error.message);
-        
-        // Log detailed error information
-        console.error('Error details:', {
-            url: error.config?.url,
-            method: error.config?.method,
-            status: error.response?.status,
-            statusText: error.response?.statusText,
-            data: error.response?.data
-        });
-        
-        // For 404 errors on /api/ endpoints, try without the /api prefix
-        if (error.response?.status === 404 && error.config?.url?.startsWith('/api/')) {
-            console.log('Attempting retry without /api prefix');
-            const newUrl = error.config.url.replace('/api/', '/');
-            return api({
-                ...error.config,
-                url: newUrl
-            });
-        }
-        
-        // For 500 errors, check if it's a server timeout
-        if (error.response?.status === 500) {
-            console.error('Server error (500) detected:', error.response?.data);
-            
-            // Add more detailed logging for debugging
-            console.error('Error details:', {
-                url: error.config?.url,
-                method: error.config?.method,
-                request: error.request,
-                responseData: error.response?.data,
-                responseStatus: error.response?.status,
-                responseHeaders: error.response?.headers
-            });
-            
-            // Check if error is related to Together AI API
-            if (error.config?.url?.includes('/chat/message') || 
-                error.config?.url?.includes('/image')) {
-                const errorDetails = error.response?.data?.details || '';
-                
-                // If it's an AI service timeout or rate limit issue
-                if (errorDetails.includes('timeout') || 
-                    errorDetails.includes('rate limit') || 
-                    errorDetails.includes('overloaded')) {
-                    
-                    console.log('AI service timeout or rate limit detected - retrying in 2 seconds...');
-                    
-                    // Return a promise that retries after a delay
-                    return new Promise(resolve => {
-                        setTimeout(() => {
-                            console.log('Retrying request after 500 error');
-                            resolve(api(error.config));
-                        }, 2000);
-                    });
-                }
-            }
-        }
-        
-        if (error.message === 'Network Error') {
-            console.error('CORS or network issue detected');
-            // Display a user-friendly message in the console
-            console.error('Network connection issue detected');
+        if (error.code === 'ECONNABORTED') {
+            console.error('Request timeout');
+            return Promise.reject(new Error('Request timed out. Please try again.'));
         }
         
         if (error.response?.status === 401 || error.response?.status === 403) {
-            console.error('Authentication error detected');
-            // Clear invalid token
             localStorage.removeItem('authToken');
             localStorage.removeItem('userId');
-            // Redirect to login
             window.location.href = '/login';
         }
         

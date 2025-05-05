@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 
-const sections = [
+const allSections = [
   { id: 'overview', label: 'Overview' },
   { id: 'getting-started', label: 'Getting Started' },
   { id: 'key-features', label: 'Key Features' },
@@ -13,6 +13,16 @@ const sections = [
 ];
 
 const Sidebar = ({ activeSection, theme, className }) => {
+  const [existingSections, setExistingSections] = useState([]);
+
+  useEffect(() => {
+    // Check which sections exist in the DOM
+    const presentSections = allSections.filter(section =>
+      document.getElementById(section.id)
+    );
+    setExistingSections(presentSections);
+  }, []);
+
   return (
     <aside className={`w-64 fixed top-20 bottom-0 overflow-y-auto p-4 lg:block ${className} transition-all duration-300`}>
       <motion.div
@@ -29,7 +39,7 @@ const Sidebar = ({ activeSection, theme, className }) => {
           </h3>
           <nav>
             <ul className="space-y-1">
-              {sections.map((section) => {
+              {existingSections.map((section) => {
                 const isActive = activeSection === section.id;
                 return (
                   <li key={section.id}>

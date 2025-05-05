@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { ArrowLeft, User, Mail, Bell, Lock, Save, Camera } from "lucide-react";
-import axios from "./api/axios";
+import api from "./api/axios";
 import { useNavigate } from "react-router-dom";
 
 const Profile = () => {
@@ -23,8 +23,9 @@ const Profile = () => {
     const fetchUserData = async () => {
       try {
         const token = localStorage.getItem("authToken");
+        const userId = localStorage.getItem("userId");
 
-        if (!token) {
+        if (!token || !userId) {
           setError("Please log in to view your profile");
           setLoading(false);
           navigate("/login");
@@ -33,79 +34,37 @@ const Profile = () => {
 
         console.log("Fetching user profile data...");
         
-        // Try to get user data using the /user endpoint directly
-        try {
-          const response = await axios.get("/user", {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-          });
-          
-          console.log("Fetched user data:", response.data);
-
-          if (response.data) {
-            setUser(response.data);
-            setFormData({
-              username: response.data.username || "",
-              email: response.data.email || "",
-              currentPassword: "",
-              newPassword: "",
-              confirmPassword: "",
-            });
-            setLoading(false);
-            return;
-          }
-        } catch (error) {
-          console.warn("Error fetching from /user, trying /api/user:", error);
-          
-          // If the first attempt fails, try with /api/user
-          try {
-            const apiResponse = await axios.get("/api/user", {
-              headers: {
-                Authorization: `Bearer ${token}`,
-                "Content-Type": "application/json",
-              },
-            });
-            
-            console.log("Fetched user data from /api/user:", apiResponse.data);
-  
-            if (apiResponse.data) {
-              setUser(apiResponse.data);
-              setFormData({
-                username: apiResponse.data.username || "",
-                email: apiResponse.data.email || "",
-                currentPassword: "",
-                newPassword: "",
-                confirmPassword: "",
-              });
-              setLoading(false);
-              return;
-            }
-          } catch (apiError) {
-            console.error("Error fetching from /api/user:", apiError);
-            throw apiError; // Let the outer catch handle this
-          }
-        }
+        const response = await api.get("/user", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
         
-        // If we get here, both attempts failed
-        throw new Error("Could not fetch user data from any endpoint");
+        console.log("Fetched user data:", response.data);
+
+        if (response.data) {
+          setUser({
+            ...response.data,
+            id: response.data.id || userId
+          });
+          setFormData({
+            username: response.data.username || "",
+            email: response.data.email || "",
+            currentPassword: "",
+            newPassword: "",
+            confirmPassword: "",
+          });
+        }
+        setLoading(false);
       } catch (err) {
         console.error("Error fetching user data:", err);
-        if (err.response) {
-          console.error("Response status:", err.response.status);
-          console.error("Response data:", err.response.data);
-        }
-        
         setError(
-          err.response?.data?.error ||
-          err.response?.data?.message ||
-          err.message ||
-          "Failed to fetch user data. Please log in again."
+          err.response?.data?.error || 
+          err.response?.data?.message || 
+          "Failed to fetch user data. Please try again."
         );
-        
         setLoading(false);
-        
         if (err.response?.status === 401 || err.response?.status === 403) {
           localStorage.removeItem("authToken");
           localStorage.removeItem("userId");
@@ -130,8 +89,9 @@ const Profile = () => {
 
     try {
       const token = localStorage.getItem("authToken");
+      const userId = localStorage.getItem("userId");
 
-      if (!token) {
+      if (!token || !userId) {
         setError("Please log in to update your profile");
         navigate("/login");
         return;
@@ -148,70 +108,34 @@ const Profile = () => {
         }
       }
 
-      const userId = localStorage.getItem("userId") || user.id;
       console.log("Updating profile for user ID:", userId);
       
-      // Try updating with /user endpoint
-      try {
-        const response = await axios.put(`/user/${userId}`, formData, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        });
-        
-        console.log("Profile update response:", response.data);
-  
-        if (response.data) {
-          // Update user object with the returned data or with form data
-          setUser({
-            ...user,
-            username: response.data.username || formData.username,
-            email: response.data.email || formData.email,
-            id: response.data.id || user.id
-          });
-          
-          setSuccess("Profile updated successfully!");
-          setIsEditing(false);
-        }
-      } catch (error) {
-        console.warn("Error updating with /user endpoint, trying with /api/user:", error);
-        
-        // If the first attempt fails, try with /api/user
-        const apiResponse = await axios.put(`/api/user/${userId}`, formData, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        });
-        
-        console.log("Profile update response from /api/user:", apiResponse.data);
+      const response = await api.put(`/user/${userId}`, formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+      
+      console.log("Profile update response:", response.data);
 
-        if (apiResponse.data) {
-          // Update user object with the returned data or with form data
-          setUser({
-            ...user,
-            username: apiResponse.data.username || formData.username,
-            email: apiResponse.data.email || formData.email,
-            id: apiResponse.data.id || user.id
-          });
-          
-          setSuccess("Profile updated successfully!");
-          setIsEditing(false);
-        }
+      if (response.data) {
+        setUser({
+          ...user,
+          username: response.data.username || formData.username,
+          email: response.data.email || formData.email,
+          id: response.data.id || userId
+        });
+        
+        setSuccess("Profile updated successfully!");
+        setIsEditing(false);
       }
     } catch (err) {
       console.error("Error updating profile:", err);
-      if (err.response) {
-        console.error("Response status:", err.response.status);
-        console.error("Response data:", err.response.data);
-      }
-      
       setError(
         err.response?.data?.error || 
         err.response?.data?.message || 
-        err.message ||
-        "Failed to update profile"
+        "Failed to update profile. Please try again."
       );
       
       if (err.response?.status === 401 || err.response?.status === 403) {
@@ -238,32 +162,24 @@ const Profile = () => {
     ) {
       try {
         const token = localStorage.getItem("authToken");
-        
-        // Try deleting with /chat endpoint
-        try {
-          await axios.delete("/chat/latest-chat", {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          });
-          alert("Chat history deleted successfully.");
-        } catch (error) {
-          console.warn("Error deleting with /chat endpoint, trying with /api/chat:", error);
-          
-          // If the first attempt fails, try with /api/chat
-          await axios.delete("/api/chat/latest-chat", {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          });
-          alert("Chat history deleted successfully.");
+        if (!token) {
+          setError("Please log in to delete chat history");
+          navigate("/login");
+          return;
         }
+
+        await api.delete("/chat/latest-chat", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        alert("Chat history deleted successfully.");
       } catch (err) {
         console.error("Error deleting chat history:", err);
         setError(
+          err.response?.data?.error || 
           err.response?.data?.message || 
-          err.message || 
-          "Failed to delete chat history"
+          "Failed to delete chat history. Please try again."
         );
       }
     }
@@ -272,8 +188,9 @@ const Profile = () => {
   // Show loading spinner while data is being fetched
   if (loading) {
     return (
-      <div className="flex justify-center items-center min-h-screen bg-gray-900 text-white">
-        <div className="animate-spin h-10 w-10 border-t-4 border-green-500 rounded-full"></div>
+      <div className="flex flex-col justify-center items-center min-h-screen bg-gray-900 text-white">
+        <div className="animate-spin h-10 w-10 border-t-4 border-green-500 rounded-full mb-4"></div>
+        <p className="text-gray-400">Loading profile...</p>
       </div>
     );
   }
@@ -312,8 +229,16 @@ const Profile = () => {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-5">
-          {error && <div className="text-red-400 text-sm">{error}</div>}
-          {success && <div className="text-green-400 text-sm">{success}</div>}
+          {error && (
+            <div className="bg-red-900/50 border border-red-500 text-red-200 px-4 py-3 rounded-lg text-sm">
+              {error}
+            </div>
+          )}
+          {success && (
+            <div className="bg-green-900/50 border border-green-500 text-green-200 px-4 py-3 rounded-lg text-sm">
+              {success}
+            </div>
+          )}
 
           <div>
             <label className="block text-sm mb-1 flex items-center gap-1">
@@ -322,7 +247,7 @@ const Profile = () => {
             <input
               type="text"
               name="username"
-              className="w-full p-2 bg-gray-700 rounded-lg text-white"
+              className="w-full p-2 bg-gray-700 rounded-lg text-white focus:ring-2 focus:ring-green-500 focus:outline-none transition"
               value={formData.username}
               onChange={handleChange}
               disabled={!isEditing}
@@ -336,7 +261,7 @@ const Profile = () => {
             <input
               type="email"
               name="email"
-              className="w-full p-2 bg-gray-700 rounded-lg text-white"
+              className="w-full p-2 bg-gray-700 rounded-lg text-white focus:ring-2 focus:ring-green-500 focus:outline-none transition"
               value={formData.email}
               onChange={handleChange}
               disabled={!isEditing}
@@ -352,7 +277,7 @@ const Profile = () => {
                 <input
                   type="password"
                   name="currentPassword"
-                  className="w-full p-2 bg-gray-700 rounded-lg text-white"
+                  className="w-full p-2 bg-gray-700 rounded-lg text-white focus:ring-2 focus:ring-green-500 focus:outline-none transition"
                   value={formData.currentPassword}
                   onChange={handleChange}
                   required={formData.newPassword !== ""}
@@ -366,7 +291,7 @@ const Profile = () => {
                 <input
                   type="password"
                   name="newPassword"
-                  className="w-full p-2 bg-gray-700 rounded-lg text-white"
+                  className="w-full p-2 bg-gray-700 rounded-lg text-white focus:ring-2 focus:ring-green-500 focus:outline-none transition"
                   value={formData.newPassword}
                   onChange={handleChange}
                 />
@@ -379,7 +304,7 @@ const Profile = () => {
                 <input
                   type="password"
                   name="confirmPassword"
-                  className="w-full p-2 bg-gray-700 rounded-lg text-white"
+                  className="w-full p-2 bg-gray-700 rounded-lg text-white focus:ring-2 focus:ring-green-500 focus:outline-none transition"
                   value={formData.confirmPassword}
                   onChange={handleChange}
                 />
@@ -392,7 +317,7 @@ const Profile = () => {
               <>
                 <button
                   type="submit"
-                  className="flex items-center bg-green-600 hover:bg-green-700 px-4 py-2 rounded-lg"
+                  className="flex items-center bg-green-600 hover:bg-green-700 px-4 py-2 rounded-lg transition-colors"
                 >
                   <Save className="mr-2" size={18} />
                   Save Changes
@@ -409,7 +334,7 @@ const Profile = () => {
                       confirmPassword: "",
                     });
                   }}
-                  className="text-red-400 hover:text-red-500"
+                  className="text-red-400 hover:text-red-500 transition-colors"
                 >
                   Cancel
                 </button>
@@ -418,7 +343,7 @@ const Profile = () => {
               <button
                 type="button"
                 onClick={() => setIsEditing(true)}
-                className="bg-green-600 hover:bg-green-700 px-4 py-2 rounded-lg"
+                className="bg-green-600 hover:bg-green-700 px-4 py-2 rounded-lg transition-colors"
               >
                 Edit Profile
               </button>
@@ -431,7 +356,7 @@ const Profile = () => {
         <div className="flex justify-between items-center">
           <button
             onClick={handleDeleteChatHistory}
-            className="flex items-center text-yellow-400 hover:text-yellow-300 transition"
+            className="flex items-center text-yellow-400 hover:text-yellow-300 transition-colors"
           >
             <Bell className="mr-2" size={18} />
             Delete Chat History
@@ -439,7 +364,7 @@ const Profile = () => {
 
           <button
             onClick={handleLogout}
-            className="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg text-white"
+            className="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg text-white transition-colors"
           >
             Logout
           </button>
