@@ -19,26 +19,56 @@ html {
 
 body {
   min-height: 100vh;
-  background: linear-gradient(to bottom, #0f172a, #020617);
   overflow-x: hidden;
 }
 
+/* Light theme styles */
+body.light {
+  background: linear-gradient(to bottom, #f8fafc, #f1f5f9);
+}
+
+/* Dark theme styles */
+body.dark {
+  background: linear-gradient(to bottom, #0f172a, #020617);
+}
+
 .glass {
-  @apply backdrop-blur-md bg-dark-900/80 border border-dark-700/50;
+  @apply backdrop-blur-md border border-gray-200/50;
+}
+
+body.dark .glass {
+  @apply bg-dark-900/80 border-dark-700/50;
+}
+
+body.light .glass {
+  @apply bg-white/80 border-gray-200/50;
 }
 
 .glass-card {
-  @apply backdrop-blur-md bg-dark-800/50 border border-dark-700/50 shadow-lg;
+  @apply backdrop-blur-md border shadow-lg;
+}
+
+body.dark .glass-card {
+  @apply bg-dark-800/50 border-dark-700/50;
+}
+
+body.light .glass-card {
+  @apply bg-white/90 border-gray-200/50;
 }
 
 .bg-grid {
-  background-image: linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+  background-image: linear-gradient(rgba(0, 0, 0, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.05) 1px, transparent 1px);
   background-size: 32px 32px;
 }
 
+body.dark .bg-grid {
+  background-image: linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+}
+
 .gradient-heading {
-  @apply bg-gradient-to-r from-primary-400 to-accent-400 text-transparent bg-clip-text;
+  @apply bg-gradient-to-r from-indigo-500 to-cyan-500 text-transparent bg-clip-text;
 }
 
 .glow-effect {
@@ -71,22 +101,56 @@ body {
 }
 
 ::-webkit-scrollbar-track {
+  @apply bg-gray-100;
+}
+
+body.dark ::-webkit-scrollbar-track {
   @apply bg-dark-900;
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply bg-dark-700 rounded-full;
+  @apply bg-gray-300 rounded-full;
+}
+
+body.dark ::-webkit-scrollbar-thumb {
+  @apply bg-dark-700;
 }
 
 ::-webkit-scrollbar-thumb:hover {
+  @apply bg-gray-400;
+}
+
+body.dark ::-webkit-scrollbar-thumb:hover {
   @apply bg-dark-600;
 }
 
 /* Highlighted active section in TOC */
 .toc-link.active {
-  @apply text-primary-400 font-medium border-l-2 border-primary-400 pl-3 -ml-4;
+  @apply text-indigo-500 font-medium border-l-2 border-indigo-500 pl-3 -ml-4;
 }
 
 .toc-link {
-  @apply transition-all duration-200 hover:text-primary-300 pl-3 ml-[-1rem];
+  @apply transition-all duration-200 hover:text-indigo-400 pl-3 ml-[-1rem];
+}
+
+/* Text colors for light theme */
+body.light .text-dark-300 {
+  @apply text-gray-600;
+}
+
+body.light .text-dark-400 {
+  @apply text-gray-500;
+}
+
+body.light .text-dark-50 {
+  @apply text-gray-900;
+}
+
+/* Card hover effects */
+body.light .glass-card:hover {
+  @apply shadow-xl border-gray-300/50;
+}
+
+body.dark .glass-card:hover {
+  @apply shadow-xl border-dark-600/50;
 }

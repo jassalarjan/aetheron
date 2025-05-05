@@ -13,9 +13,11 @@ import {
   Mic
 } from 'lucide-react';
 import logo from '../assets/images/2.png';
+
 const Sidebar = ({ setSidebarHovered, isAuthenticated }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
   const location = useLocation();
 
   useEffect(() => {
@@ -28,6 +30,17 @@ const Sidebar = ({ setSidebarHovered, isAuthenticated }) => {
     
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      const timer = setTimeout(() => {
+        setIsVisible(true);
+      }, 50);
+      return () => clearTimeout(timer);
+    } else {
+      setIsVisible(false);
+    }
+  }, [isAuthenticated]);
 
   const handleHover = (val) => {
     if (!isMobile) {
@@ -95,6 +108,10 @@ const Sidebar = ({ setSidebarHovered, isAuthenticated }) => {
     },
   ];
 
+  if (!isVisible) {
+    return null;
+  }
+
   return (
     <div
       className={`fixed top-0 left-0 h-full bg-gray-900 text-white shadow-lg transition-all duration-300 z-50
@@ -103,7 +120,7 @@ const Sidebar = ({ setSidebarHovered, isAuthenticated }) => {
       onMouseLeave={() => handleHover(false)}
     >
       <div className="p-4 border-b border-gray-700">
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center justify-center space-x-3">
           <div className="w-10 h-10 bg-indigo-500 rounded-lg flex items-center justify-center">
             <img src={logo} alt="Aetheron Logo" className="w-10 h-10" />
           </div>
@@ -121,8 +138,8 @@ const Sidebar = ({ setSidebarHovered, isAuthenticated }) => {
               <li key={idx}>
                 <Link
                   to={item.path}
-                  className={`flex items-center gap-4 px-4 py-3 rounded-lg transition-all duration-200 group
-                    ${isActive ? item.active : 'hover:bg-gray-800'}`}
+                  className={`flex items-center gap-4 px-3 py-3 rounded-lg transition-all duration-200 group
+                    ${isActive ? item.active : item.hover}`}
                   title={item.description}
                   aria-label={item.label}
                 >
@@ -140,7 +157,7 @@ const Sidebar = ({ setSidebarHovered, isAuthenticated }) => {
       </nav>
 
       <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-700">
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center justify-center space-x-3">
           <div className="w-8 h-8 bg-indigo-500 rounded-full flex items-center justify-center">
             <User className="w-4 h-4" />
           </div>

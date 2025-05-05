@@ -17,11 +17,11 @@ function Documentation() {
   useEffect(() => {
     const handleScroll = () => {
       const sections = document.querySelectorAll('section[id]');
+      const scrollPosition = window.scrollY + 100; // Offset for header
       
       sections.forEach(section => {
-        const sectionTop = section.offsetTop - 100;
+        const sectionTop = section.offsetTop;
         const sectionBottom = sectionTop + section.offsetHeight;
-        const scrollPosition = window.scrollY;
         
         if (scrollPosition >= sectionTop && scrollPosition < sectionBottom) {
           setActiveSection(section.getAttribute('id'));
@@ -29,18 +29,49 @@ function Documentation() {
       });
     };
     
+    // Add smooth scrolling behavior
+    const handleClick = (e) => {
+      if (e.target.tagName === 'A' && e.target.getAttribute('href')?.startsWith('#')) {
+        e.preventDefault();
+        const targetId = e.target.getAttribute('href').slice(1);
+        const targetElement = document.getElementById(targetId);
+        if (targetElement) {
+          const headerOffset = 100;
+          const elementPosition = targetElement.getBoundingClientRect().top;
+          const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+
+          window.scrollTo({
+            top: offsetPosition,
+            behavior: 'smooth'
+          });
+        }
+      }
+    };
+
+    document.addEventListener('click', handleClick);
     window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      document.removeEventListener('click', handleClick);
+    };
   }, []);
+
+  useEffect(() => {
+    // Apply theme class to body
+    document.body.className = theme;
+    return () => {
+      document.body.className = '';
+    };
+  }, [theme]);
 
   const toggleTheme = () => {
     setTheme(theme === 'dark' ? 'light' : 'dark');
   };
 
   return (
-    
-    <div className={`min-h-screen ${theme === 'dark' ? 'bg-dark-950 text-dark-50' : 'bg-white text-dark-900'} transition-colors duration-300`}>
-      <BackgroundEffects />
+    <div className={`min-h-screen ${theme === 'dark' ? 'bg-dark-950 text-dark-50' : 'bg-white text-gray-900'} transition-colors duration-300`}>
+      <BackgroundEffects theme={theme} />
       
       <Header 
         theme={theme} 

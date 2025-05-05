@@ -35,14 +35,20 @@ function App() {
 			try {
 				const token = localStorage.getItem("authToken");
 				if (token) {
+					// Set default axios headers
 					axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+					
 					// Verify token validity
-					await axios.get('/api/auth/verify');
+					await axios.get('/auth/verify');
 					setIsAuthenticated(true);
 				}
 			} catch (error) {
 				console.error('Auth check failed:', error);
+				// Clear invalid token and user data
 				localStorage.removeItem("authToken");
+				localStorage.removeItem("userId");
+				localStorage.removeItem("username");
+				localStorage.removeItem("email");
 				setIsAuthenticated(false);
 			} finally {
 				setIsLoading(false);
@@ -60,16 +66,14 @@ function App() {
 		<ErrorBoundary>
 			<Router>
 				<div className="min-h-screen bg-gray-50">
-					{isAuthenticated && (
-						<Sidebar 
-							setSidebarHovered={setSidebarHovered} 
-							isAuthenticated={isAuthenticated}
-						/>
-					)}
+					<Sidebar 
+						setSidebarHovered={setSidebarHovered} 
+						isAuthenticated={isAuthenticated}
+					/>
 
 					<main
-						className={`transition-all duration-300 min-h-screen ${
-							isAuthenticated ? (sidebarHovered ? "ml-56" : "ml-20") : ""
+						className={`min-h-screen transition-all duration-300 ${
+							isAuthenticated ? (sidebarHovered ? "ml-64" : "ml-20") : "ml-0"
 						}`}
 					>
 						<Routes>
@@ -92,6 +96,14 @@ function App() {
 							/>
 
 							{/* Protected routes */}
+							<Route 
+								path="/home" 
+								element={
+									<ProtectedRoute isAuthenticated={isAuthenticated}>
+										<HomePage />
+									</ProtectedRoute>
+								} 
+							/>
 							<Route 
 								path="/chat" 
 								element={
@@ -139,33 +151,9 @@ function App() {
 								} 
 							/>
 
-							{/* Homepage */}
-							<Route 
-								path="/home" 
-								element={
-									<ProtectedRoute isAuthenticated={isAuthenticated}>
-										<HomePage />
-									</ProtectedRoute>
-								} 
-							/>
-							<Route 
-								path="/agent" 
-								element={
-									<ProtectedRoute isAuthenticated={isAuthenticated}>
-										<Agent />
-									</ProtectedRoute>
-								} 
-							/>
-
-							{/* Default routes */}
+							{/* Default route */}
 							<Route 
 								path="/" 
-								element={
-									<Navigate to={isAuthenticated ? "/home" : "/login"} replace />
-								} 
-							/>
-							<Route 
-								path="*" 
 								element={
 									<Navigate to={isAuthenticated ? "/home" : "/login"} replace />
 								} 

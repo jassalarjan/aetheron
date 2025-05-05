@@ -5,7 +5,7 @@ import "./assets/css/login.css";
 import logImage from "./assets/images/log.png";
 import registerImage from "./assets/images/register.png";
 
-const LoginSignup = () => {
+const LoginSignup = ({ setIsAuthenticated }) => {
 	const [isLogin, setIsLogin] = useState(true);
 	const [formData, setFormData] = useState({
 		username: "",
@@ -26,33 +26,39 @@ const LoginSignup = () => {
 		setError("");
 
 		try {
-			const endpoint = isLogin ? "/login" : "/register"; // Remove /api prefix since it's in baseURL
+			const endpoint = isLogin ? "/login" : "/register";
 			const response = await api.post(endpoint, formData);
 
 			if (isLogin) {
 				if (response.data.token) {
-					// Store token with correct key
+					// Store token and user data
 					localStorage.setItem("authToken", response.data.token);
 					
-					// Store user info if available
 					if (response.data.user) {
 						localStorage.setItem("userId", response.data.user.id);
 						localStorage.setItem("username", response.data.user.username);
+						localStorage.setItem("email", response.data.user.email);
 					}
 					
-					navigate("/home"); // Redirect to home page after successful login
+					// Set default axios headers
+					api.defaults.headers.common['Authorization'] = `Bearer ${response.data.token}`;
+					
+					// Update authentication state
+					setIsAuthenticated(true);
+					
+					// Navigate to home
+					navigate("/home");
 				}
 			} else {
 				// Handle registration success
 				if (response.data.message === "User registered successfully") {
-					setError(""); // Clear any errors
-					setIsLogin(true); // Switch to login form
-					// Optional: Show success message
+					setError("");
+					setIsLogin(true);
 					alert("Registration successful! Please login.");
 				}
 			}
 
-			// Reset form after success
+			// Reset form
 			setFormData({ username: "", email: "", password: "" });
 		} catch (err) {
 			console.error("Authentication error:", err);

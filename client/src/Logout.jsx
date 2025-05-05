@@ -1,27 +1,40 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import api from "./api/axios";
 
-const Logout = () => {
+const Logout = ({ setIsAuthenticated }) => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Frontend-only logout
-    localStorage.removeItem("authToken");
-    localStorage.removeItem("userId");
-    localStorage.removeItem("username");
+    const handleLogout = async () => {
+      try {
+        // Clear all auth data
+        localStorage.removeItem("authToken");
+        localStorage.removeItem("userId");
+        localStorage.removeItem("username");
+        localStorage.removeItem("email");
 
-    delete axios.defaults.headers.common["Authorization"];
+        // Remove auth header
+        delete api.defaults.headers.common["Authorization"];
 
-    // Redirect to login
-    navigate("/login");
-  }, [navigate]);
+        // Update auth state
+        if (setIsAuthenticated) {
+          setIsAuthenticated(false);
+        }
 
-  return (
-    <div className="logout-page text-center mt-10">
-      <p className="text-lg text-gray-500">Logging out...</p>
-    </div>
-  );
+        // Immediately redirect to login
+        navigate("/login", { replace: true });
+      } catch (error) {
+        console.error("Logout error:", error);
+        // Still redirect to login even if there's an error
+        navigate("/login", { replace: true });
+      }
+    };
+
+    handleLogout();
+  }, [navigate, setIsAuthenticated]);
+
+  return null; // Don't render anything during logout
 };
 
 export default Logout;
