@@ -25,6 +25,8 @@ const TogetherAIChat = ({ setView }) => {
 	const [isInitialLoading, setIsInitialLoading] = useState(true);
 	const chatBoxRef = useRef(null);
 	const [retryingMessage, setRetryingMessage] = useState(null);
+	const [showNewChatModal, setShowNewChatModal] = useState(false);
+	const [newChatMessage, setNewChatMessage] = useState("");
 
 	useEffect(() => {
 		const token = localStorage.getItem("authToken");
@@ -265,28 +267,31 @@ const TogetherAIChat = ({ setView }) => {
 	};
 
 	const handleNewChat = async () => {
+		setShowNewChatModal(true);
+	};
+
+	const handleCreateNewChat = async () => {
 		try {
 			setError(null);
-			// Prompt user for initial message
-			const initialMessage = prompt("Please enter your first message for the new chat:");
-			if (!initialMessage) {
+			if (!newChatMessage.trim()) {
 				setError("A message is required to create a new chat");
 				return;
 			}
 
 			const response = await api.post("/chat", {
 				chat_name: `New Chat ${new Date().toLocaleString()}`,
-				initial_message: initialMessage
+				initial_message: newChatMessage
 			});
 			
 			if (response.data.chat_id) {
 				setChatId(response.data.chat_id);
 				setMessages([{
 					sender: "user",
-					text: initialMessage,
+					text: newChatMessage,
 					timestamp: new Date().toISOString()
 				}]);
-				setPrompt("");
+				setNewChatMessage("");
+				setShowNewChatModal(false);
 				await fetchChatHistory();
 			} else {
 				throw new Error("Failed to create new chat");
@@ -582,6 +587,35 @@ const TogetherAIChat = ({ setView }) => {
 					onClose={() => setShowModal(false)}
 					onSave={() => setShowModal(false)}
 				/>
+			)}
+
+			{/* New Chat Modal */}
+			{showNewChatModal && (
+				<div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+					<div className="bg-white rounded-lg p-6 w-full max-w-md">
+						<h2 className="text-xl font-semibold mb-4">Create New Chat</h2>
+						<textarea
+							className="w-full h-32 p-3 rounded-lg border border-gray-300 shadow-sm resize-none focus:ring-2 focus:ring-indigo-500"
+							value={newChatMessage}
+							onChange={(e) => setNewChatMessage(e.target.value)}
+							placeholder="Enter your first message..."
+						/>
+						<div className="flex justify-end space-x-3 mt-4">
+							<button
+								onClick={() => setShowNewChatModal(false)}
+								className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+							>
+								Cancel
+							</button>
+							<button
+								onClick={handleCreateNewChat}
+								className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+							>
+								Create Chat
+							</button>
+						</div>
+					</div>
+				</div>
 			)}
 		</div>
 	);

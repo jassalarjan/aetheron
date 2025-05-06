@@ -34,58 +34,27 @@ const Profile = () => {
 
         console.log("Fetching user profile data...");
         
-        // First try with /api/user
-        try {
-          const response = await api.get("/api/user", {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-          });
-          
-          console.log("Fetched user data:", response.data);
+        const response = await api.get("/user", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+        
+        console.log("Fetched user data:", response.data);
 
-          if (response.data) {
-            setUser({
-              ...response.data,
-              id: response.data.id || userId
-            });
-            setFormData({
-              username: response.data.username || "",
-              email: response.data.email || "",
-              currentPassword: "",
-              newPassword: "",
-              confirmPassword: "",
-            });
-            setLoading(false);
-            return;
-          }
-        } catch (apiError) {
-          console.warn("Error fetching from /api/user, trying /user:", apiError);
-          
-          // If /api/user fails, try with /user
-          const response = await api.get("/user", {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
+        if (response.data) {
+          setUser({
+            ...response.data,
+            id: response.data.id || userId
           });
-          
-          console.log("Fetched user data from /user:", response.data);
-
-          if (response.data) {
-            setUser({
-              ...response.data,
-              id: response.data.id || userId
-            });
-            setFormData({
-              username: response.data.username || "",
-              email: response.data.email || "",
-              currentPassword: "",
-              newPassword: "",
-              confirmPassword: "",
-            });
-          }
+          setFormData({
+            username: response.data.username || "",
+            email: response.data.email || "",
+            currentPassword: "",
+            newPassword: "",
+            confirmPassword: "",
+          });
         }
         setLoading(false);
       } catch (err) {
@@ -141,53 +110,25 @@ const Profile = () => {
 
       console.log("Updating profile for user ID:", userId);
       
-      // First try with /api/user/:id
-      try {
-        const response = await api.put(`/api/user/${userId}`, formData, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
+      const response = await api.put(`/user/${userId}`, formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+      
+      console.log("Profile update response:", response.data);
+
+      if (response.data) {
+        setUser({
+          ...user,
+          username: response.data.username || formData.username,
+          email: response.data.email || formData.email,
+          id: response.data.id || userId
         });
         
-        console.log("Profile update response:", response.data);
-
-        if (response.data) {
-          setUser({
-            ...user,
-            username: response.data.username || formData.username,
-            email: response.data.email || formData.email,
-            id: response.data.id || userId
-          });
-          
-          setSuccess("Profile updated successfully!");
-          setIsEditing(false);
-          return;
-        }
-      } catch (apiError) {
-        console.warn("Error updating with /api/user, trying /user:", apiError);
-        
-        // If /api/user/:id fails, try with /user/:id
-        const response = await api.put(`/user/${userId}`, formData, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        });
-        
-        console.log("Profile update response from /user:", response.data);
-
-        if (response.data) {
-          setUser({
-            ...user,
-            username: response.data.username || formData.username,
-            email: response.data.email || formData.email,
-            id: response.data.id || userId
-          });
-          
-          setSuccess("Profile updated successfully!");
-          setIsEditing(false);
-        }
+        setSuccess("Profile updated successfully!");
+        setIsEditing(false);
       }
     } catch (err) {
       console.error("Error updating profile:", err);
@@ -227,26 +168,12 @@ const Profile = () => {
           return;
         }
 
-        // First try with /api/chat/latest-chat
-        try {
-          await api.delete("/api/chat/latest-chat", {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          });
-          alert("Chat history deleted successfully.");
-          return;
-        } catch (apiError) {
-          console.warn("Error deleting with /api/chat, trying /chat:", apiError);
-          
-          // If /api/chat/latest-chat fails, try with /chat/latest-chat
-          await api.delete("/chat/latest-chat", {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          });
-          alert("Chat history deleted successfully.");
-        }
+        await api.delete("/chat/latest-chat", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        alert("Chat history deleted successfully.");
       } catch (err) {
         console.error("Error deleting chat history:", err);
         setError(
