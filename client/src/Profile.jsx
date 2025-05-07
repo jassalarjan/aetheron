@@ -25,6 +25,9 @@ const Profile = () => {
         const token = localStorage.getItem("authToken");
         const userId = localStorage.getItem("userId");
 
+        console.log("Auth token:", token ? "Present" : "Missing");
+        console.log("User ID:", userId);
+
         if (!token || !userId) {
           setError("Please log in to view your profile");
           setLoading(false);
@@ -34,13 +37,14 @@ const Profile = () => {
 
         console.log("Fetching user profile data...");
         
-        const response = await api.get("/user", {
+        const response = await api.get("/api/user", {
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
         });
         
+        console.log("API Response:", response);
         console.log("Fetched user data:", response.data);
 
         if (response.data) {
@@ -59,6 +63,12 @@ const Profile = () => {
         setLoading(false);
       } catch (err) {
         console.error("Error fetching user data:", err);
+        console.error("Error details:", {
+          message: err.message,
+          response: err.response?.data,
+          status: err.response?.status,
+          headers: err.response?.headers
+        });
         setError(
           err.response?.data?.error || 
           err.response?.data?.message || 
@@ -108,9 +118,9 @@ const Profile = () => {
         }
       }
 
-      console.log("Updating profile for user ID:", userId);
+      console.log("Updating profile...");
       
-      const response = await api.put(`/user/${userId}`, formData, {
+      const response = await api.put(`/api/user/${userId}`, formData, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
@@ -122,9 +132,8 @@ const Profile = () => {
       if (response.data) {
         setUser({
           ...user,
-          username: response.data.username || formData.username,
-          email: response.data.email || formData.email,
-          id: response.data.id || userId
+          username: formData.username,
+          email: formData.email,
         });
         
         setSuccess("Profile updated successfully!");
@@ -162,12 +171,6 @@ const Profile = () => {
     ) {
       try {
         const token = localStorage.getItem("authToken");
-        if (!token) {
-          setError("Please log in to delete chat history");
-          navigate("/login");
-          return;
-        }
-
         await api.delete("/chat/latest-chat", {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -175,12 +178,7 @@ const Profile = () => {
         });
         alert("Chat history deleted successfully.");
       } catch (err) {
-        console.error("Error deleting chat history:", err);
-        setError(
-          err.response?.data?.error || 
-          err.response?.data?.message || 
-          "Failed to delete chat history. Please try again."
-        );
+        setError(err.response?.data?.message || "Failed to delete chat history");
       }
     }
   };
@@ -188,9 +186,8 @@ const Profile = () => {
   // Show loading spinner while data is being fetched
   if (loading) {
     return (
-      <div className="flex flex-col justify-center items-center min-h-screen bg-gray-900 text-white">
-        <div className="animate-spin h-10 w-10 border-t-4 border-green-500 rounded-full mb-4"></div>
-        <p className="text-gray-400">Loading profile...</p>
+      <div className="flex justify-center items-center min-h-screen bg-gray-900 text-white">
+        <div className="animate-spin h-10 w-10 border-t-4 border-green-500 rounded-full"></div>
       </div>
     );
   }

@@ -90,14 +90,14 @@ const Sidebar = ({ setSidebarHovered, isAuthenticated }) => {
       hover: 'hover:bg-orange-600',
       description: 'API documentation'
     },
-    { 
-      path: '/profile', 
-      label: 'Profile', 
-      icon: <User className="w-6 h-6" />, 
-      active: 'bg-yellow-600', 
-      hover: 'hover:bg-yellow-600',
-      description: 'User profile settings'
-    },
+    // { 
+    //   path: '/profile', 
+    //   label: 'Profile', 
+    //   icon: <User className="w-6 h-6" />, 
+    //   active: 'bg-yellow-600', 
+    //   hover: 'hover:bg-yellow-600',
+    //   description: 'User profile settings'
+    // },
     { 
       path: '/logout', 
       label: 'Logout', 

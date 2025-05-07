@@ -13,7 +13,7 @@ import axios from "axios";
 import Chat from "./TogetherAIChat";
 import LoginSignup from "./LoginSignup";
 import Profile from "./Profile";
-import Sidebar from './components/Sidebar';
+import Sidebar from './components/Sidebar'; 
 import ImageGenerator from "./ImageGenerator";
 import HomePage from "./HomePage";
 import Agent from "./Agent";
