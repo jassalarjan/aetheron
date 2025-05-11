@@ -22,7 +22,8 @@ api.interceptors.request.use((config) => {
     console.log(`Making API request to: ${config.method?.toUpperCase() || 'GET'} ${config.url}`);
     
     // Add /api prefix if not already present and not requesting a root endpoint
-    if (config.url && !config.url.startsWith('/api') && config.url !== '/') {
+    // Don't add /api prefix for /user endpoint
+    if (config.url && !config.url.startsWith('/api') && config.url !== '/' && !config.url.startsWith('/user')) {
         config.url = `/api${config.url}`;
         console.log(`Adjusted URL with /api prefix: ${config.url}`);
     }

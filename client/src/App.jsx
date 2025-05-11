@@ -13,7 +13,7 @@ import axios from "axios";
 import Chat from "./TogetherAIChat";
 import LoginSignup from "./LoginSignup";
 import Profile from "./Profile";
-import Sidebar from './components/Sidebar'; 
+import Sidebar from "./components/Sidebar";
 import ImageGenerator from "./ImageGenerator";
 import HomePage from "./HomePage";
 import Agent from "./Agent";
@@ -23,6 +23,9 @@ import ProtectedRoute from "./ProtectedRoute";
 import VoiceRecognition from "./VoiceRecognition";
 import ErrorBoundary from "./components/ErrorBoundary";
 import LoadingSpinner from "./components/LoadingSpinner";
+import AetheronContainer from "./components/AetheronContainer";
+import { Toaster } from "react-hot-toast";
+import AetheronTest from './components/AetheronTest';
 
 function App() {
 	const [view, setView] = useState("chat");
@@ -63,106 +66,126 @@ function App() {
 	}
 
 	return (
-		<ErrorBoundary>
-			<Router>
-				<div className="min-h-screen bg-gray-50">
+		<Router>
+			<ErrorBoundary>
+				<Toaster position="top-right" />
+				{isAuthenticated && (
 					<Sidebar 
 						setSidebarHovered={setSidebarHovered} 
 						isAuthenticated={isAuthenticated}
 					/>
+				)}
 
-					<main
-						className={`min-h-screen transition-all duration-300 ${
-							isAuthenticated ? (sidebarHovered ? "ml-64" : "ml-20") : "ml-0"
-						}`}
-					>
-						<Routes>
-							{/* Public routes */}
-							<Route 
-								path="/login" 
-								element={
-									isAuthenticated ? 
-									<Navigate to="/home" replace /> : 
-									<LoginSignup setIsAuthenticated={setIsAuthenticated} />
-								} 
-							/>
-							<Route 
-								path="/register" 
-								element={
-									isAuthenticated ? 
-									<Navigate to="/home" replace /> : 
-									<LoginSignup setIsAuthenticated={setIsAuthenticated} />
-								} 
-							/>
+				<div
+					className={`transition-all duration-300 ${
+						isAuthenticated ? (sidebarHovered ? "ml-56" : "ml-20") : ""
+					}`}
+				>
+					<Routes>
+						{/* Public routes */}
+						<Route 
+							path="/login" 
+							element={
+								isAuthenticated ? 
+								<Navigate to="/home" replace /> : 
+								<LoginSignup setIsAuthenticated={setIsAuthenticated} />
+							} 
+						/>
+						<Route 
+							path="/register" 
+							element={
+								isAuthenticated ? 
+								<Navigate to="/home" replace /> : 
+								<LoginSignup setIsAuthenticated={setIsAuthenticated} />
+							} 
+						/>
 
-							{/* Protected routes */}
-							<Route 
-								path="/home" 
-								element={
-									<ProtectedRoute isAuthenticated={isAuthenticated}>
-										<HomePage />
-									</ProtectedRoute>
-								} 
-							/>
-							<Route 
-								path="/chat" 
-								element={
-									<ProtectedRoute isAuthenticated={isAuthenticated}>
-										<Chat setView={setView} />
-									</ProtectedRoute>
-								} 
-							/>
-							<Route 
-								path="/profile" 
-								element={
-									<ProtectedRoute isAuthenticated={isAuthenticated}>
-										<Profile />
-									</ProtectedRoute>
-								} 
-							/>
-							<Route 
-								path="/image-generator" 
-								element={
-									<ProtectedRoute isAuthenticated={isAuthenticated}>
-										<ImageGenerator />
-									</ProtectedRoute>
-								} 
-							/>
-							<Route 
-								path="/nlp" 
-								element={
-									<ProtectedRoute isAuthenticated={isAuthenticated}>
-										<VoiceRecognition />
-									</ProtectedRoute>
-								} 
-							/>
-							<Route 
-								path="/logout" 
-								element={
-									<Logout setIsAuthenticated={setIsAuthenticated} />
-								} 
-							/>
-							<Route 
-								path="/documentation" 
-								element={
-									<ProtectedRoute isAuthenticated={isAuthenticated}>
-										<Documentation />
-									</ProtectedRoute>
-								} 
-							/>
+						{/* Protected routes */}
+						<Route 
+							path="/chat" 
+							element={
+								<ProtectedRoute isAuthenticated={isAuthenticated}>
+									<Chat setView={setView} />
+								</ProtectedRoute>
+							} 
+						/>
+						<Route 
+							path="/profile" 
+							element={
+								<ProtectedRoute isAuthenticated={isAuthenticated}>
+									<Profile />
+								</ProtectedRoute>
+							} 
+						/>
+						<Route 
+							path="/image-generator" 
+							element={
+								<ProtectedRoute isAuthenticated={isAuthenticated}>
+									<ImageGenerator />
+								</ProtectedRoute>
+							} 
+						/>
+						<Route 
+							path="/nlp" 
+							element={
+								<ProtectedRoute isAuthenticated={isAuthenticated}>
+									<VoiceRecognition />
+								</ProtectedRoute>
+							} 
+						/>
+						<Route 
+							path="/documentation" 
+							element={
+								<ProtectedRoute isAuthenticated={isAuthenticated}>
+									<Documentation />
+								</ProtectedRoute>
+							} 
+						/>
+						<Route 
+							path="/home" 
+							element={
+								<ProtectedRoute isAuthenticated={isAuthenticated}>
+									<HomePage />
+								</ProtectedRoute>
+							} 
+						/>
+						<Route 
+							path="/agent" 
+							element={
+								<ProtectedRoute isAuthenticated={isAuthenticated}>
+									<Agent />
+								</ProtectedRoute>
+							} 
+						/>
+						<Route 
+							path="/test-aetheron" 
+							element={
+								<ProtectedRoute isAuthenticated={isAuthenticated}>
+									<AetheronTest />
+								</ProtectedRoute>
+							} 
+						/>
 
-							{/* Default route */}
-							<Route 
-								path="/" 
-								element={
-									<Navigate to={isAuthenticated ? "/home" : "/login"} replace />
-								} 
-							/>
-						</Routes>
-					</main>
+						{/* Default routes */}
+						<Route 
+							path="/" 
+							element={
+								<Navigate to={isAuthenticated ? "/home" : "/login"} replace />
+							} 
+						/>
+						<Route 
+							path="*" 
+							element={
+								<Navigate to={isAuthenticated ? "/home" : "/login"} replace />
+							} 
+						/>
+					</Routes>
 				</div>
-			</Router>
-		</ErrorBoundary>
+
+				{/* Aetheron Core Container */}
+				<AetheronContainer />
+			</ErrorBoundary>
+		</Router>
 	);
 }
 

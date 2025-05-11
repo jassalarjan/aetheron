@@ -113,14 +113,14 @@ function HomePage() {
 			icon: <BookOpen size={28} className="sm:w-8 sm:h-8 md:w-10 md:h-10" />,
 			stats: null
 		},
-		// { 
-		// 	title: "Profile", 
-		// 	path: "/profile", 
-		// 	color: "from-yellow-500 to-yellow-600", 
-		// 	description: "View and edit your profile.", 
-		// 	icon: <User size={28} className="sm:w-8 sm:h-8 md:w-10 md:h-10" />,
-		// 	stats: null
-		// },
+		{ 
+			title: "Profile", 
+			path: "/profile", 
+			color: "from-yellow-500 to-yellow-600", 
+			description: "View and edit your profile.", 
+			icon: <User size={28} className="sm:w-8 sm:h-8 md:w-10 md:h-10" />,
+			stats: null
+		},
 		{ 
 			title: "Logout", 
 			path: "/logout", 
