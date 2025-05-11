@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { ArrowLeft, User, Mail, Bell, Lock, Save, Camera } from "lucide-react";
 import api from "./api/axios";
 import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 
 const Profile = () => {
   const navigate = useNavigate();
@@ -10,6 +11,7 @@ const Profile = () => {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [isEditing, setIsEditing] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
   const [formData, setFormData] = useState({
     username: "",
     email: "",
@@ -25,9 +27,6 @@ const Profile = () => {
         const token = localStorage.getItem("authToken");
         const userId = localStorage.getItem("userId");
 
-        console.log("Auth token:", token ? "Present" : "Missing");
-        console.log("User ID:", userId);
-
         if (!token || !userId) {
           setError("Please log in to view your profile");
           setLoading(false);
@@ -35,17 +34,12 @@ const Profile = () => {
           return;
         }
 
-        console.log("Fetching user profile data...");
-        
-        const response = await api.get("/api/user", {
+        const response = await api.get("/user", {
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
         });
-        
-        console.log("API Response:", response);
-        console.log("Fetched user data:", response.data);
 
         if (response.data) {
           setUser({
@@ -63,12 +57,6 @@ const Profile = () => {
         setLoading(false);
       } catch (err) {
         console.error("Error fetching user data:", err);
-        console.error("Error details:", {
-          message: err.message,
-          response: err.response?.data,
-          status: err.response?.status,
-          headers: err.response?.headers
-        });
         setError(
           err.response?.data?.error || 
           err.response?.data?.message || 
@@ -88,7 +76,41 @@ const Profile = () => {
 
   // Handle form input changes
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+    // Clear error when user starts typing
+    if (error) setError("");
+  };
+
+  // Validate form data
+  const validateForm = () => {
+    if (!formData.username.trim()) {
+      setError("Username is required");
+      return false;
+    }
+    if (!formData.email.trim()) {
+      setError("Email is required");
+      return false;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      setError("Please enter a valid email address");
+      return false;
+    }
+    if (formData.newPassword) {
+      if (!formData.currentPassword) {
+        setError("Current password is required to change password");
+        return false;
+      }
+      if (formData.newPassword.length < 6) {
+        setError("New password must be at least 6 characters long");
+        return false;
+      }
+      if (formData.newPassword !== formData.confirmPassword) {
+        setError("New passwords do not match");
+        return false;
+      }
+    }
+    return true;
   };
 
   // Handle profile update form submission
@@ -96,7 +118,10 @@ const Profile = () => {
     e.preventDefault();
     setError("");
     setSuccess("");
+    
+    if (!validateForm()) return;
 
+    setIsUpdating(true);
     try {
       const token = localStorage.getItem("authToken");
       const userId = localStorage.getItem("userId");
@@ -107,27 +132,12 @@ const Profile = () => {
         return;
       }
 
-      if (formData.newPassword) {
-        if (formData.newPassword !== formData.confirmPassword) {
-          setError("New passwords do not match");
-          return;
-        }
-        if (!formData.currentPassword) {
-          setError("Current password is required to change password");
-          return;
-        }
-      }
-
-      console.log("Updating profile...");
-      
-      const response = await api.put(`/api/user/${userId}`, formData, {
+      const response = await api.put(`/user/${userId}`, formData, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
       });
-      
-      console.log("Profile update response:", response.data);
 
       if (response.data) {
         setUser({
@@ -136,22 +146,33 @@ const Profile = () => {
           email: formData.email,
         });
         
+        toast.success("Profile updated successfully!");
         setSuccess("Profile updated successfully!");
         setIsEditing(false);
+        
+        // Clear password fields
+        setFormData(prev => ({
+          ...prev,
+          currentPassword: "",
+          newPassword: "",
+          confirmPassword: "",
+        }));
       }
     } catch (err) {
       console.error("Error updating profile:", err);
-      setError(
-        err.response?.data?.error || 
-        err.response?.data?.message || 
-        "Failed to update profile. Please try again."
-      );
+      const errorMessage = err.response?.data?.error || 
+                          err.response?.data?.message || 
+                          "Failed to update profile. Please try again.";
+      setError(errorMessage);
+      toast.error(errorMessage);
       
       if (err.response?.status === 401 || err.response?.status === 403) {
         localStorage.removeItem("authToken");
         localStorage.removeItem("userId");
         navigate("/login");
       }
+    } finally {
+      setIsUpdating(false);
     }
   };
 
@@ -160,6 +181,7 @@ const Profile = () => {
     localStorage.removeItem("authToken");
     localStorage.removeItem("userId");
     navigate("/login");
+    toast.success("Logged out successfully");
   };
 
   // Handle delete chat history
@@ -176,9 +198,11 @@ const Profile = () => {
             Authorization: `Bearer ${token}`,
           },
         });
-        alert("Chat history deleted successfully.");
+        toast.success("Chat history deleted successfully");
       } catch (err) {
-        setError(err.response?.data?.message || "Failed to delete chat history");
+        const errorMessage = err.response?.data?.message || "Failed to delete chat history";
+        setError(errorMessage);
+        toast.error(errorMessage);
       }
     }
   };
@@ -211,13 +235,16 @@ const Profile = () => {
             <img
               src={
                 user.avatar ||
-                `https://ui-avatars.com/api/?name=${user.username}&background=random`
+                `https://ui-avatars.com/api/?name=${encodeURIComponent(user.username)}&background=random`
               }
               alt="Profile"
-              className="w-24 h-24 rounded-full border-4 border-green-500 shadow-md"
+              className="w-24 h-24 rounded-full border-4 border-green-500 shadow-md object-cover"
             />
             {isEditing && (
-              <button className="absolute bottom-0 right-0 bg-green-600 p-1 rounded-full hover:bg-green-700 transition">
+              <button 
+                className="absolute bottom-0 right-0 bg-green-600 p-1 rounded-full hover:bg-green-700 transition"
+                title="Change avatar"
+              >
                 <Camera size={18} />
               </button>
             )}
@@ -247,7 +274,8 @@ const Profile = () => {
               className="w-full p-2 bg-gray-700 rounded-lg text-white focus:ring-2 focus:ring-green-500 focus:outline-none transition"
               value={formData.username}
               onChange={handleChange}
-              disabled={!isEditing}
+              disabled={!isEditing || isUpdating}
+              required
             />
           </div>
 
@@ -261,7 +289,8 @@ const Profile = () => {
               className="w-full p-2 bg-gray-700 rounded-lg text-white focus:ring-2 focus:ring-green-500 focus:outline-none transition"
               value={formData.email}
               onChange={handleChange}
-              disabled={!isEditing}
+              disabled={!isEditing || isUpdating}
+              required
             />
           </div>
 
@@ -277,6 +306,7 @@ const Profile = () => {
                   className="w-full p-2 bg-gray-700 rounded-lg text-white focus:ring-2 focus:ring-green-500 focus:outline-none transition"
                   value={formData.currentPassword}
                   onChange={handleChange}
+                  disabled={isUpdating}
                   required={formData.newPassword !== ""}
                 />
               </div>
@@ -291,6 +321,8 @@ const Profile = () => {
                   className="w-full p-2 bg-gray-700 rounded-lg text-white focus:ring-2 focus:ring-green-500 focus:outline-none transition"
                   value={formData.newPassword}
                   onChange={handleChange}
+                  disabled={isUpdating}
+                  minLength={6}
                 />
               </div>
 
@@ -304,6 +336,7 @@ const Profile = () => {
                   className="w-full p-2 bg-gray-700 rounded-lg text-white focus:ring-2 focus:ring-green-500 focus:outline-none transition"
                   value={formData.confirmPassword}
                   onChange={handleChange}
+                  disabled={isUpdating}
                 />
               </div>
             </>
@@ -314,10 +347,20 @@ const Profile = () => {
               <>
                 <button
                   type="submit"
-                  className="flex items-center bg-green-600 hover:bg-green-700 px-4 py-2 rounded-lg transition-colors"
+                  className="flex items-center bg-green-600 hover:bg-green-700 px-4 py-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={isUpdating}
                 >
-                  <Save className="mr-2" size={18} />
-                  Save Changes
+                  {isUpdating ? (
+                    <>
+                      <div className="animate-spin h-4 w-4 border-t-2 border-white rounded-full mr-2"></div>
+                      Updating...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="mr-2" size={18} />
+                      Save Changes
+                    </>
+                  )}
                 </button>
                 <button
                   type="button"
@@ -330,8 +373,10 @@ const Profile = () => {
                       newPassword: "",
                       confirmPassword: "",
                     });
+                    setError("");
                   }}
                   className="text-red-400 hover:text-red-500 transition-colors"
+                  disabled={isUpdating}
                 >
                   Cancel
                 </button>
