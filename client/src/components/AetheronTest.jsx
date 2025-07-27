@@ -30,15 +30,12 @@ const AetheronTest = () => {
                         navigate(response.data.target);
                         toast.success(response.data.message);
                         break;
-                    case 'theme':
-                        if (response.data.mode === 'dark') {
-                            document.documentElement.classList.add('dark');
-                            localStorage.setItem('theme', 'dark');
-                        } else {
-                            document.documentElement.classList.remove('dark');
-                            localStorage.setItem('theme', 'light');
-                        }
-                        toast.success(response.data.message);
+                    case 'chat':
+                        // Navigate to chat and send the prompt
+                        navigate(response.data.target);
+                        // Store the prompt in localStorage for the chat component to pick up
+                        localStorage.setItem('pendingChatPrompt', response.data.chatPrompt);
+                        toast.success('Sending message to chat...');
                         break;
                     case 'summarize':
                         const pageContent = document.body.innerText;

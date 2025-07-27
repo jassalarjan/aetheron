@@ -39,12 +39,13 @@ const TogetherAIChat = ({ setView }) => {
 	const fetchChatHistory = async () => {
 		try {
 			setError(null);
-			const response = await api.get("/chat/chat-history");
-			if (response.data.chats && response.data.chats.length > 0) {
-				setChatHistory(response.data.chats);
-			} else {
-				setChatHistory([]);
-			}
+		const response = await api.get("/chat/chat-history");
+		const chats = response.data.chats || [];
+		if (chats.length > 0) {
+			setChatHistory(chats);
+		} else {
+			setChatHistory([]);
+		}
 		} catch (error) {
 			console.error("Error fetching chat history:", error);
 			if (error.response?.status === 401 || error.response?.status === 403) {
